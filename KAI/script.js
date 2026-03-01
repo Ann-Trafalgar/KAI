@@ -6,6 +6,7 @@ let calcStr = '', calcExpr = '';
 let externalUrl = '';
 let clockInterval = null, analogInterval = null;
 let pinVal = '';
+let qrPinVal = '';
 let guideActive = false;
 let guideStepIndex = 0;
 let currentFlow = null;
@@ -264,6 +265,295 @@ function fbGoSuccess() {
 
 function fbOpenPostModal() { showToast("✏️ Post composer coming soon!"); }
 
+/* ═══════════════════════════════════
+   FACEBOOK — REACTIONS
+═══════════════════════════════════ */
+const fbLikeState = { 1: null, 2: null }; // null = not reacted
+let fbReactionTimer = {};
+
+function fbShowReactions(postId) {
+  clearTimeout(fbReactionTimer[postId]);
+  document.getElementById('fb-reaction-picker-' + postId)?.classList.add('visible');
+}
+function fbHideReactions(postId) {
+  fbReactionTimer[postId] = setTimeout(() => {
+    document.getElementById('fb-reaction-picker-' + postId)?.classList.remove('visible');
+  }, 400);
+}
+function fbToggleLike(postId) {
+  if (fbLikeState[postId]) {
+    fbPickReaction(postId, null, null); // un-react
+  } else {
+    fbPickReaction(postId, '👍', 'Like');
+  }
+}
+function fbPickReaction(postId, emoji, label) {
+  fbHideReactions(postId);
+  const btn   = document.getElementById('fb-like-btn-' + postId);
+  const lbl   = document.getElementById('fb-like-label-' + postId);
+  const count = document.getElementById('fb-post' + postId + '-react-count');
+  if (!btn || !lbl) return;
+
+  if (emoji === null) {
+    // Remove reaction
+    fbLikeState[postId] = null;
+    btn.classList.remove('liked');
+    btn.querySelector('i').className = 'fas fa-thumbs-up';
+    lbl.textContent = 'Like';
+    if (count && postId === 1) count.textContent = '👍 ❤️ 142';
+    if (count && postId === 2) count.textContent = '👍 😍 87';
+  } else {
+    fbLikeState[postId] = emoji;
+    btn.classList.add('liked');
+    btn.querySelector('i').className = 'fas fa-thumbs-up';
+    btn.querySelector('i').textContent = '';
+    lbl.innerHTML = emoji + ' ' + label;
+    if (count && postId === 1) count.textContent = emoji + ' ❤️ 143';
+    if (count && postId === 2) count.textContent = emoji + ' 😍 88';
+    showToast('You reacted ' + emoji + ' to this post!');
+    if (guideActive) setTimeout(renderGuideStep, 260);
+  }
+}
+
+/* ═══════════════════════════════════
+   FACEBOOK — SHARE
+═══════════════════════════════════ */
+let fbSharePostId = null;
+
+function fbOpenShare(postId) {
+  fbSharePostId = postId;
+  // Update preview for the correct post
+  const previews = {
+    1: { avatar:'👩', name:'Maria Santos', text:'Enjoying the beautiful sunset at Rizal Park today! 🌅' },
+    2: { avatar:'👨', name:'Juan Dela Cruz', text:'Merienda time with the family! 🍜🍗' },
+  };
+  const p = previews[postId] || previews[1];
+  const sheet = document.getElementById('fb-share-sheet');
+  sheet.querySelector('.fb-share-preview-avatar').textContent = p.avatar;
+  sheet.querySelector('.fb-share-preview-name').textContent   = p.name;
+  sheet.querySelector('.fb-share-preview-text').textContent   = p.text;
+
+  document.getElementById('fb-share-overlay').classList.add('visible');
+  setTimeout(() => sheet.classList.add('open'), 10);
+  if (guideActive) setTimeout(renderGuideStep, 350);
+}
+function fbCloseShare() {
+  document.getElementById('fb-share-sheet').classList.remove('open');
+  document.getElementById('fb-share-overlay').classList.remove('visible');
+}
+function fbShareNow() {
+  fbCloseShare();
+  const countEl = document.getElementById('fb-post1-share-count');
+  if (fbSharePostId === 1 && countEl) countEl.textContent = parseInt(countEl.textContent) + 1;
+  const banner = document.getElementById('fb-share-success');
+  banner.classList.add('show');
+  speak("Post shared to your timeline!");
+  showToast("🔁 Post shared successfully!");
+  setTimeout(() => banner.classList.remove('show'), 3000);
+  if (guideActive) stopGuide();
+}
+
+/* ── React to Post Guide Flow ── */
+const reactPostFlow = [
+  {
+    targetId: 'fb-app-icon',
+    viewId:   'home-screen',
+    message:  "First, open the Facebook app from your home screen.",
+    tapToAdvance: true,
+    onTap() { openApp('facebook'); },
+  },
+  {
+    targetId: 'fb-post-1',
+    viewId:   'facebook-screen',
+    subviewId: 'fb-home',
+    message:  "Here's a post on your feed. To react, find the 👍 Like button at the bottom of the post.",
+    tapToAdvance: false,
+    okLabel:  "Got it →",
+  },
+  {
+    targetId: 'fb-like-btn-1',
+    viewId:   'facebook-screen',
+    subviewId: 'fb-home',
+    message:  "This is the Like button. Tap it once to Like, or hold it (hover on desktop) to see more reactions like ❤️ Love, 😂 Haha, and more!",
+    tapToAdvance: false,
+    okLabel:  "I see it →",
+  },
+  {
+    targetId: 'fb-reaction-picker-1',
+    viewId:   'facebook-screen',
+    subviewId: 'fb-home',
+    message:  "These are your reaction options! Tap any emoji — 👍 Like, ❤️ Love, 😂 Haha, 😮 Wow, 😢 Sad, or 😡 Angry. Pick one now!",
+    tapToAdvance: false,
+    okLabel:  "I picked a reaction ✓",
+    onShow()  { fbShowReactions(1); },
+  },
+  {
+    targetId: 'fb-like-btn-1',
+    viewId:   'facebook-screen',
+    subviewId: 'fb-home',
+    message:  "Great! Your reaction is saved. The counter updated too. To remove it, just tap the button again.",
+    tapToAdvance: false,
+    okLabel:  "Done! 🎉",
+  },
+];
+
+/* ── Share a Post Guide Flow ── */
+const sharePostFlow = [
+  {
+    targetId: 'fb-app-icon',
+    viewId:   'home-screen',
+    message:  "First, open the Facebook app from your home screen.",
+    tapToAdvance: true,
+    onTap() { openApp('facebook'); },
+  },
+  {
+    targetId: 'fb-post-1',
+    viewId:   'facebook-screen',
+    subviewId: 'fb-home',
+    message:  "Here's a post you can share. Scroll down to see the Share button at the bottom of the post.",
+    tapToAdvance: false,
+    okLabel:  "I can see it →",
+  },
+  {
+    targetId: 'fb-share-btn-1',
+    viewId:   'facebook-screen',
+    subviewId: 'fb-home',
+    message:  "This is the Share button. Tap it to see your sharing options!",
+    tapToAdvance: true,
+    onTap() { fbOpenShare(1); },
+  },
+  {
+    targetId: 'fb-share-sheet',
+    viewId:   'facebook-screen',
+    subviewId: 'fb-home',
+    message:  "A menu appeared with sharing options. You can share now, add a caption, share to your Story, or send via Messenger.",
+    tapToAdvance: false,
+    okLabel:  "Got it →",
+  },
+  {
+    targetId: 'fb-share-now-btn',
+    viewId:   'facebook-screen',
+    subviewId: 'fb-home',
+    message:  "Tap 'Share Now' to instantly post this to your timeline. Your friends will see it!",
+    tapToAdvance: true,
+    onTap() { fbShareNow(); },
+  },
+];
+
+/* ═══════════════════════════════════
+   GCASH — QR / RECEIVE
+═══════════════════════════════════ */
+
+/* Simple SVG QR code generator (decorative pattern) */
+function buildQrSvg(elId) {
+  const size = 130;
+  const cells = 11;
+  const cell = Math.floor(size / cells);
+  // Deterministic "QR-like" pattern
+  const pattern = [
+    [1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,1,0,0,1,1],
+    [1,0,1,1,1,0,1,0,1,0,0],
+    [1,0,1,1,1,0,1,0,0,1,1],
+    [1,0,1,1,1,0,1,0,1,1,0],
+    [1,0,0,0,0,0,1,0,1,0,1],
+    [1,1,1,1,1,1,1,0,1,0,1],
+    [0,0,0,0,0,0,0,0,1,1,0],
+    [1,0,1,1,0,1,1,1,1,0,1],
+    [0,1,0,0,1,0,0,1,0,1,0],
+    [1,1,1,1,0,1,1,0,1,0,1],
+  ];
+  let rects = '';
+  pattern.forEach((row, r) => {
+    row.forEach((v, c) => {
+      if (v) rects += `<rect x="${c*cell}" y="${r*cell}" width="${cell-1}" height="${cell-1}" rx="1" fill="#0070ba"/>`;
+    });
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${rects}</svg>`;
+  const el = document.getElementById(elId);
+  if (el) el.innerHTML = svg;
+}
+
+/* QR PIN pad */
+function qrPinPress(d) {
+  if (qrPinVal.length >= 4) return;
+  qrPinVal += d; updateQrPinDots();
+  if (qrPinVal.length === 4) {
+    setTimeout(() => {
+      if (qrPinVal === '1234') {
+        gcashShowSub('gcash-qr-success');
+        buildQrSvg('gcash-qr-svg');
+        buildQrSvg('gcash-qr-svg-final');
+        // Also show QR in info screen
+        document.getElementById('gcash-qr-locked').style.display = 'none';
+        document.getElementById('gcash-qr-active').classList.remove('gcash-qr-active-hidden');
+        buildQrSvg('gcash-qr-svg');
+        speak("Your QR code is now activated! Show it to anyone who wants to send you money.");
+        showToast("✅ QR Code activated!");
+        if (guideActive) stopGuide();
+      } else {
+        speak("Incorrect PIN. Please try again.");
+        showToast("❌ Wrong PIN. Try: 1 2 3 4");
+        qrPinVal = ''; updateQrPinDots();
+      }
+    }, 350);
+  }
+}
+function qrPinBackspace() { qrPinVal = qrPinVal.slice(0,-1); updateQrPinDots(); }
+function updateQrPinDots() {
+  for (let i = 0; i < 4; i++)
+    document.getElementById('qpd'+i).classList.toggle('filled', i < qrPinVal.length);
+}
+function gcashGoHome() {
+  gcashShowSub('gcash-home');
+  qrPinVal = '';
+  updateQrPinDots();
+}
+
+/* ── Receive Money (QR Activation) Guide Flow ── */
+const receiveMoneyFlow = [
+  {
+    targetId: 'gcash-receive-btn',
+    viewId:   'gcash-screen',
+    subviewId:'gcash-home',
+    message:  "We're in GCash! Now tap the 'Receive' button to start setting up your QR code.",
+    tapToAdvance: true,
+    onTap() { gcashShowSub('gcash-receive'); },
+  },
+  {
+    targetId: 'gcash-qr-option-btn',
+    viewId:   'gcash-screen',
+    subviewId:'gcash-receive',
+    message:  "You'll see different receive options. Tap 'My QR Code' — this lets people scan and send money directly to you.",
+    tapToAdvance: true,
+    onTap() { gcashShowSub('gcash-qr-info'); },
+  },
+  {
+    targetId: 'gcash-qr-frame',
+    viewId:   'gcash-screen',
+    subviewId:'gcash-qr-info',
+    message:  "This is where your QR code will appear. Right now it's locked — we need to activate it. You can also set a specific amount if you want.",
+    tapToAdvance: false,
+    okLabel:  "Got it →",
+  },
+  {
+    targetId: 'gcash-activate-qr-btn',
+    viewId:   'gcash-screen',
+    subviewId:'gcash-qr-info',
+    message:  "Tap 'Activate QR Code' to unlock your personal QR. GCash will ask you to confirm with your MPIN for security.",
+    tapToAdvance: true,
+    onTap() { gcashShowSub('gcash-qr-confirm'); qrPinVal=''; updateQrPinDots(); },
+  },
+  {
+    targetId: 'gcash-qr-pin-pad',
+    viewId:   'gcash-screen',
+    subviewId:'gcash-qr-confirm',
+    message:  "Enter your 4-digit MPIN to verify it's really you. This keeps your account secure. For this demo, use 1 2 3 4.",
+    tapToAdvance: false,
+    okLabel:  "I entered my PIN →",
+  },
+];
+
 /* ── Upload Photo Guide Flow ── */
 const uploadPhotoFlow = [
   {
@@ -367,10 +657,18 @@ const sendMoneyFlow = [
     onTap() { gcashGoReview(); },
   },
   {
+    targetId: 'gcash-review-summary',
+    viewId:   'gcash-screen',
+    subviewId:'gcash-send-review',
+    message:  "Here's your Transaction Summary — double-check the name, number, and amount. Transactions cannot be reversed once sent!",
+    tapToAdvance: false,
+    okLabel:  "I've reviewed it ✓",
+  },
+  {
     targetId: 'gcash-confirm-btn',
     viewId:   'gcash-screen',
     subviewId:'gcash-send-review',
-    message:  "Read the details carefully — check the name and amount are correct. If everything looks right, tap 'Confirm & Enter PIN'.",
+    message:  "Everything looks correct? Tap 'Confirm & Enter PIN' to proceed.",
     tapToAdvance: true,
     onTap() { gcashGoPin(); },
   },
@@ -400,6 +698,7 @@ function renderGuideStep() {
     if (step.viewId === 'facebook-screen') fbShowSub(step.subviewId);
     else gcashShowSub(step.subviewId);
   }
+  if (step.onShow) setTimeout(step.onShow, 200);
 
   setTimeout(() => positionGuideOn(step), 160);
 }
@@ -414,6 +713,26 @@ function positionGuideOn(step) {
   const tapHintEl  = document.getElementById('guide-tap-hint');
   const okBtn      = document.getElementById('guide-ok-btn');
 
+  const target = document.getElementById(step.targetId);
+  if (!target) return;
+
+  // Scroll the target into the top quarter of its scrollable container
+  // so the bubble can sit below it without covering it or the content above
+  const scrollParent = target.closest('.gcash-flow-body, .gcash-body, .fb-feed, .app-content, .fb-caption-area');
+  if (scrollParent) {
+    const parentRect = scrollParent.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const offsetInsideParent = targetRect.top - parentRect.top + scrollParent.scrollTop;
+    // Put the target near 30% from the top of the container
+    const desiredScroll = offsetInsideParent - (scrollParent.clientHeight * 0.25);
+    scrollParent.scrollTo({ top: Math.max(0, desiredScroll), behavior: 'smooth' });
+  }
+
+  // Wait for scroll to settle before measuring positions
+  setTimeout(() => _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn), 320);
+}
+
+function _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn) {
   const target = document.getElementById(step.targetId);
   if (!target) return;
 
@@ -437,35 +756,28 @@ function positionGuideOn(step) {
   canvas.height = pRect.height;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const r = 30;
+  const W = canvas.width, H = canvas.height;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(r, 0); ctx.lineTo(W-r, 0); ctx.quadraticCurveTo(W, 0, W, r);
+  ctx.lineTo(W, H-r); ctx.quadraticCurveTo(W, H, W-r, H);
+  ctx.lineTo(r, H); ctx.quadraticCurveTo(0, H, 0, H-r);
+  ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath(); ctx.clip();
   ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, W, H);
   const hx = rx - pad - 3, hy = ry - pad - 3;
   const hw = rw + (pad+3)*2, hh = rh + (pad+3)*2;
   ctx.clearRect(hx, hy, hw, hh);
+  ctx.restore();
 
+  // Remove old blocker — no blocker divs needed
   const oldBlocker = document.getElementById('guide-blocker');
   if (oldBlocker) oldBlocker.remove();
 
-  const blocker = document.createElement('div');
-  blocker.id = 'guide-blocker';
-  blocker.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:501;';
-
-  const zones = [
-    { left:0, top:0, width:pRect.width, height: hy },
-    { left:0, top: hy+hh, width:pRect.width, height: pRect.height - (hy+hh) },
-    { left:0, top: hy, width: hx, height: hh },
-    { left: hx+hw, top: hy, width: pRect.width - (hx+hw), height: hh },
-  ];
-  zones.forEach(z => {
-    const d = document.createElement('div');
-    d.style.cssText = `position:absolute;left:${z.left}px;top:${z.top}px;
-      width:${z.width}px;height:${z.height}px;pointer-events:all;z-index:502;`;
-    d.addEventListener('click', (e) => { e.stopPropagation(); });
-    blocker.appendChild(d);
-  });
-  overlay.appendChild(blocker);
-
-  // Move bubble to end so it's on top
+  // Move bubble to top of DOM so it stays above everything
   const bubble_el = document.getElementById('kai-guide-bubble');
   bubble_el.parentNode.appendChild(bubble_el);
 
@@ -483,25 +795,40 @@ function positionGuideOn(step) {
 
   speak(step.message);
 
-  const bubbleH  = 190;
-  const bubbleW  = 280;
-  const targetCX = rx + rw / 2;
+  const bubbleH    = 200;
+  const bubbleW    = 280;
+  const targetCX   = rx + rw / 2;
   const arrowOffset = 28;
+  const screenH    = pRect.height;
+  const screenW    = pRect.width;
+  const margin     = 10;
+
+  const ringTop    = ry - pad;
+  const ringBottom = ry + rh + pad;
+  const spaceAbove = ringTop - margin - 44;   // 44 = status bar
+  const spaceBelow = screenH - ringBottom - margin - 50; // 50 = home bar
 
   let bTop, arrowClass;
-  if (ry - pad - bubbleH - 16 > 38) {
-    bTop       = ry - pad - bubbleH - 16;
-    arrowClass = 'bubble-arrow-bottom';
-  } else {
-    bTop       = ry + rh + pad + 16;
+  if (spaceBelow >= bubbleH + 8) {
+    // Prefer below — target is near top after scroll, bubble fits below cleanly
+    bTop       = ringBottom + 12;
     arrowClass = 'bubble-arrow-top';
+  } else if (spaceAbove >= bubbleH + 8) {
+    bTop       = ringTop - bubbleH - 12;
+    arrowClass = 'bubble-arrow-bottom';
+  } else if (spaceBelow >= spaceAbove) {
+    bTop       = Math.min(screenH - bubbleH - 54, ringBottom + 8);
+    arrowClass = 'bubble-arrow-top';
+  } else {
+    bTop       = Math.max(44, ringTop - bubbleH - 8);
+    arrowClass = 'bubble-arrow-bottom';
   }
 
   let bLeft = targetCX - arrowOffset - 14;
-  bLeft = Math.max(8, Math.min(bLeft, pRect.width - bubbleW - 8));
+  bLeft = Math.max(margin, Math.min(bLeft, screenW - bubbleW - margin));
 
   bubble.className  = arrowClass;
-  bubble.style.top  = Math.max(38, Math.min(bTop, pRect.height - bubbleH - 24)) + 'px';
+  bubble.style.top  = Math.max(44, Math.min(bTop, screenH - bubbleH - 24)) + 'px';
   bubble.style.left = bLeft + 'px';
 
   let arrowStyle = document.getElementById('guide-arrow-style');
@@ -549,8 +876,6 @@ function stopGuide() {
   overlay.classList.remove('active');
   const ctx = document.getElementById('kai-guide-backdrop').getContext('2d');
   ctx.clearRect(0, 0, 9999, 9999);
-  const blocker = document.getElementById('guide-blocker');
-  if (blocker) blocker.remove();
 }
 
 /* ═══════════════════════════════════
@@ -582,7 +907,7 @@ function setListening(v) {
 function setKaiStatus(s) {
   const el = document.getElementById('kai-subtitle');
   if (el) el.textContent = (s === 'READY')
-    ? 'Try: "Help me send money" or "Upload a photo"' : s;
+    ? 'Try: "Help me send money" or "How to react on Facebook"' : s;
 }
 function setKaiTranscript(t) { document.getElementById('kai-transcript').textContent = t; }
 
@@ -605,11 +930,33 @@ function takeCommand(msg) {
       startGuide(sendMoneyFlow);
     });
   }
+  else if (msg.includes('receive money') || msg.includes('help me receive') ||
+           msg.includes('qr code') || msg.includes('activate qr') ||
+           msg.includes('tumanggap') || msg.includes('receive')) {
+    respond("Sure! I'll guide you step by step on how to activate your QR code so people can send you money. Follow the highlights!", () => {
+      openApp('gcash');
+      setTimeout(() => startGuide(receiveMoneyFlow), 700);
+    });
+  }
   else if (msg.includes('upload') || msg.includes('post a photo') ||
            msg.includes('post photo') || msg.includes('mag upload') ||
            msg.includes('how do i upload') || msg.includes('share a photo')) {
     respond("Sure! I'll guide you step by step on how to upload a photo on Facebook. Follow the yellow highlights!", () => {
       startGuide(uploadPhotoFlow);
+    });
+  }
+  else if (msg.includes('react') || msg.includes('how to react') ||
+           msg.includes('like a post') || msg.includes('mag react') ||
+           msg.includes('love react') || msg.includes('how do i react')) {
+    respond("Sure! I'll show you how to react to a Facebook post step by step. Follow the highlights!", () => {
+      startGuide(reactPostFlow);
+    });
+  }
+  else if (msg.includes('share a post') || msg.includes('how to share') ||
+           msg.includes('mag share') || msg.includes('i share') ||
+           msg.includes('share post') || msg.includes('how do i share')) {
+    respond("Let me guide you on how to share a Facebook post! Follow the highlights step by step.", () => {
+      startGuide(sharePostFlow);
     });
   }
   else if (msg.includes('facebook') || msg.includes('open facebook')) {

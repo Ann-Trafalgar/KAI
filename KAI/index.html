@@ -95,7 +95,7 @@
       </div>
       <div class="kai-bottom">
         <h1 class="kai-name">KAI</h1>
-        <p class="kai-subtitle" id="kai-subtitle">Try: "Help me send money" or "Upload a photo"</p>
+        <p class="kai-subtitle" id="kai-subtitle">Try: "Help me send money" or "How to react on Facebook"</p>
         <div class="kai-input-bar" id="kai-input-bar" onclick="startListening()">
           <div class="kai-mic-icon" id="kai-mic-icon"><i class="fas fa-microphone-alt"></i></div>
           <span class="kai-bar-text" id="kai-transcript">Tap to speak</span>
@@ -131,7 +131,7 @@
               </div>
               <span class="gcash-action-label">Send Money</span>
             </button>
-            <button class="gcash-action-btn">
+            <button class="gcash-action-btn" id="gcash-receive-btn" onclick="gcashShowSub('gcash-receive')">
               <div class="gcash-action-icon ga-receive">
                 <i class="fas fa-arrow-down"></i>
               </div>
@@ -305,7 +305,7 @@
             <div class="gcash-step-line done"></div>
             <div class="gcash-step-dot active">3</div>
           </div>
-          <div class="gcash-form-card">
+          <div class="gcash-form-card" id="gcash-review-summary">
             <h3>Transaction Summary</h3>
             <div class="gcash-review-amt" id="review-amt">₱0.00</div>
             <div class="gcash-review-row">
@@ -390,6 +390,181 @@
           <button class="gcash-btn gcash-success-back-btn" onclick="gcashGoHome()">
             Back to GCash Home
           </button>
+          <button class="gcash-btn-ghost" onclick="goHome()">Go to Home Screen</button>
+        </div>
+      </div>
+
+      <!-- ══ RECEIVE — Step 1: Choose Method ══ -->
+      <div class="gcash-subview" id="gcash-receive">
+        <div class="gcash-flow-header">
+          <button class="gcash-flow-back" onclick="gcashShowSub('gcash-home')">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="gcash-flow-title">Receive Money</span>
+        </div>
+        <div class="gcash-flow-body">
+          <div class="gcash-section-title">How do you want to receive?</div>
+
+          <div class="gcash-receive-option" id="gcash-qr-option-btn" onclick="gcashShowSub('gcash-qr-info')">
+            <div class="gcash-receive-option-icon gcash-roi-green">
+              <i class="fas fa-qrcode"></i>
+            </div>
+            <div class="gcash-receive-option-info">
+              <div class="gcash-receive-option-title">My QR Code</div>
+              <div class="gcash-receive-option-desc">Let someone scan your QR to send money directly to you</div>
+            </div>
+            <i class="fas fa-chevron-right gcash-receive-option-arrow"></i>
+          </div>
+
+          <div class="gcash-receive-option" onclick="gcashShowSub('gcash-home')">
+            <div class="gcash-receive-option-icon gcash-roi-purple">
+              <i class="fas fa-link"></i>
+            </div>
+            <div class="gcash-receive-option-info">
+              <div class="gcash-receive-option-title">Payment Link</div>
+              <div class="gcash-receive-option-desc">Share a link so anyone can pay you online</div>
+            </div>
+            <i class="fas fa-chevron-right gcash-receive-option-arrow"></i>
+          </div>
+
+          <div class="gcash-receive-option" onclick="gcashShowSub('gcash-home')">
+            <div class="gcash-receive-option-icon gcash-roi-blue">
+              <i class="fas fa-mobile-alt"></i>
+            </div>
+            <div class="gcash-receive-option-info">
+              <div class="gcash-receive-option-title">Share Number</div>
+              <div class="gcash-receive-option-desc">Give your GCash number to receive a transfer</div>
+            </div>
+            <i class="fas fa-chevron-right gcash-receive-option-arrow"></i>
+          </div>
+
+          <div class="gcash-receive-tip">
+            <i class="fas fa-shield-alt"></i>
+            <span>Your QR code is unique to your account and <strong>safe to share</strong> with people you trust.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ RECEIVE — Step 2: QR Info / Confirm ══ -->
+      <div class="gcash-subview" id="gcash-qr-info">
+        <div class="gcash-flow-header">
+          <button class="gcash-flow-back" onclick="gcashShowSub('gcash-receive')">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="gcash-flow-title">Your QR Code</span>
+        </div>
+        <div class="gcash-flow-body">
+          <div class="gcash-qr-card">
+            <div class="gcash-qr-header-row">
+              <div class="gcash-avatar-circle">👤</div>
+              <div>
+                <div class="gcash-qr-name">Juan D. Cruz</div>
+                <div class="gcash-qr-number">+63 917 *** 4567</div>
+              </div>
+            </div>
+            <div class="gcash-qr-frame" id="gcash-qr-frame">
+              <div class="gcash-qr-locked" id="gcash-qr-locked">
+                <i class="fas fa-lock"></i>
+                <span>QR not yet activated</span>
+                <small>Tap below to activate</small>
+              </div>
+              <div class="gcash-qr-active" id="gcash-qr-active" class="gcash-qr-active-hidden">
+                <div class="gcash-qr-svg" id="gcash-qr-svg"></div>
+                <div class="gcash-qr-scan-label">Scan to pay me</div>
+              </div>
+            </div>
+            <div class="gcash-qr-amount-row">
+              <span class="gcash-qr-amount-label">Set amount (optional)</span>
+              <div class="gcash-qr-amount-input-wrap">
+                <span class="gcash-qr-peso">₱</span>
+                <input class="gcash-qr-amount-input" id="gcash-qr-amount" type="number" placeholder="0.00">
+              </div>
+            </div>
+          </div>
+
+          <div class="gcash-qr-steps-card">
+            <div class="gcash-section-title gcash-qr-steps-title">How it works</div>
+            <div class="gcash-qr-step-row">
+              <div class="gcash-qr-step-num">1</div>
+              <span>Tap <strong>Activate QR Code</strong> below</span>
+            </div>
+            <div class="gcash-qr-step-row">
+              <div class="gcash-qr-step-num">2</div>
+              <span>Show your QR to the sender</span>
+            </div>
+            <div class="gcash-qr-step-row">
+              <div class="gcash-qr-step-num">3</div>
+              <span>They scan it and confirm payment</span>
+            </div>
+            <div class="gcash-qr-step-row">
+              <div class="gcash-qr-step-num">4</div>
+              <span>Money lands instantly in your account!</span>
+            </div>
+          </div>
+
+          <button class="gcash-btn" id="gcash-activate-qr-btn" onclick="gcashShowSub('gcash-qr-confirm')">
+            <i class="fas fa-qrcode"></i> Activate QR Code
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ RECEIVE — Step 3: Confirm PIN ══ -->
+      <div class="gcash-subview" id="gcash-qr-confirm">
+        <div class="gcash-flow-header">
+          <button class="gcash-flow-back" onclick="gcashShowSub('gcash-qr-info')">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="gcash-flow-title">Confirm Identity</span>
+        </div>
+        <div class="gcash-flow-body gcash-pin-flow-body">
+          <div class="gcash-pin-header">
+            <div class="gcash-pin-emoji">🔐</div>
+            <div class="gcash-pin-title">Enter your MPIN</div>
+            <div class="gcash-pin-hint">to activate your QR Code</div>
+          </div>
+          <div class="gcash-pin-dots" id="qr-pin-dots">
+            <div class="gcash-pin-dot" id="qpd0"></div>
+            <div class="gcash-pin-dot" id="qpd1"></div>
+            <div class="gcash-pin-dot" id="qpd2"></div>
+            <div class="gcash-pin-dot" id="qpd3"></div>
+          </div>
+          <div class="gcash-pin-pad" id="gcash-qr-pin-pad">
+            <button class="gcash-pin-btn" onclick="qrPinPress('1')">1<span>&nbsp;</span></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('2')">2<span>ABC</span></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('3')">3<span>DEF</span></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('4')">4<span>GHI</span></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('5')">5<span>JKL</span></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('6')">6<span>MNO</span></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('7')">7<span>PQRS</span></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('8')">8<span>TUV</span></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('9')">9<span>WXYZ</span></button>
+            <button class="gcash-pin-btn gcash-pin-btn-disabled" disabled></button>
+            <button class="gcash-pin-btn" onclick="qrPinPress('0')">0</button>
+            <button class="gcash-pin-btn del" onclick="qrPinBackspace()"><i class="fas fa-backspace"></i></button>
+          </div>
+          <div class="gcash-pin-demo">Demo PIN: <strong>1234</strong></div>
+        </div>
+      </div>
+
+      <!-- ══ RECEIVE — Step 4: QR Activated ══ -->
+      <div class="gcash-subview" id="gcash-qr-success">
+        <div class="gcash-flow-header gcash-flow-header-center">
+          <span class="gcash-flow-title">QR Activated!</span>
+        </div>
+        <div class="gcash-success">
+          <div class="gcash-success-ring gcash-success-ring-green">
+            <i class="fas fa-qrcode"></i>
+          </div>
+          <h2>QR Code is Live! 🎉</h2>
+          <p>Your QR code is now active. Show this to anyone who wants to send you money.</p>
+          <div class="gcash-qr-display" id="gcash-qr-display-final">
+            <div class="gcash-qr-svg-success" id="gcash-qr-svg-final"></div>
+          </div>
+          <div class="gcash-qr-share-row">
+            <button class="gcash-qr-share-btn"><i class="fas fa-download"></i> Save</button>
+            <button class="gcash-qr-share-btn"><i class="fas fa-share-alt"></i> Share</button>
+          </div>
+          <button class="gcash-btn gcash-success-back-btn" onclick="gcashGoHome()">Back to GCash Home</button>
           <button class="gcash-btn-ghost" onclick="goHome()">Go to Home Screen</button>
         </div>
       </div>
@@ -558,7 +733,7 @@
           </div>
 
           <!-- Post 1 -->
-          <div class="fb-card fb-post">
+          <div class="fb-card fb-post" id="fb-post-1">
             <div class="fb-post-header">
               <div class="fb-avatar">👩</div>
               <div class="fb-post-meta">
@@ -571,20 +746,38 @@
             <div class="fb-post-img-placeholder fb-img-sunset">
               <span class="fb-post-emoji">🌅</span>
             </div>
-            <div class="fb-post-stats">
-              <span>👍 ❤️ 142</span>
-              <span>28 comments · 5 shares</span>
+            <div class="fb-post-stats" id="fb-post1-stats">
+              <span id="fb-post1-react-count">👍 ❤️ 142</span>
+              <span>28 comments · <span id="fb-post1-share-count">5</span> shares</span>
             </div>
             <div class="fb-post-divider"></div>
+
+            <!-- Reaction picker (hidden by default) -->
+            <div class="fb-reaction-picker" id="fb-reaction-picker-1">
+              <button class="fb-reaction-emoji" onclick="fbPickReaction(1,'👍','Like')"   title="Like">👍</button>
+              <button class="fb-reaction-emoji" onclick="fbPickReaction(1,'❤️','Love')"   title="Love">❤️</button>
+              <button class="fb-reaction-emoji" onclick="fbPickReaction(1,'😂','Haha')"   title="Haha">😂</button>
+              <button class="fb-reaction-emoji" onclick="fbPickReaction(1,'😮','Wow')"    title="Wow">😮</button>
+              <button class="fb-reaction-emoji" onclick="fbPickReaction(1,'😢','Sad')"    title="Sad">😢</button>
+              <button class="fb-reaction-emoji" onclick="fbPickReaction(1,'😡','Angry')"  title="Angry">😡</button>
+            </div>
+
             <div class="fb-post-actions">
-              <button class="fb-action-btn"><i class="fas fa-thumbs-up"></i> Like</button>
+              <button class="fb-action-btn" id="fb-like-btn-1"
+                onclick="fbToggleLike(1)"
+                onmouseenter="fbShowReactions(1)"
+                onmouseleave="fbHideReactions(1)">
+                <i class="fas fa-thumbs-up"></i> <span id="fb-like-label-1">Like</span>
+              </button>
               <button class="fb-action-btn"><i class="fas fa-comment"></i> Comment</button>
-              <button class="fb-action-btn"><i class="fas fa-share"></i> Share</button>
+              <button class="fb-action-btn" id="fb-share-btn-1" onclick="fbOpenShare(1)">
+                <i class="fas fa-share"></i> Share
+              </button>
             </div>
           </div>
 
           <!-- Post 2 -->
-          <div class="fb-card fb-post">
+          <div class="fb-card fb-post" id="fb-post-2">
             <div class="fb-post-header">
               <div class="fb-avatar">👨</div>
               <div class="fb-post-meta">
@@ -598,18 +791,75 @@
               <span class="fb-post-emoji">🍜</span>
             </div>
             <div class="fb-post-stats">
-              <span>👍 😍 87</span>
+              <span id="fb-post2-react-count">👍 😍 87</span>
               <span>14 comments</span>
             </div>
             <div class="fb-post-divider"></div>
             <div class="fb-post-actions">
-              <button class="fb-action-btn"><i class="fas fa-thumbs-up"></i> Like</button>
+              <button class="fb-action-btn" id="fb-like-btn-2"
+                onclick="fbToggleLike(2)"
+                onmouseenter="fbShowReactions(2)"
+                onmouseleave="fbHideReactions(2)">
+                <i class="fas fa-thumbs-up"></i> <span id="fb-like-label-2">Like</span>
+              </button>
               <button class="fb-action-btn"><i class="fas fa-comment"></i> Comment</button>
-              <button class="fb-action-btn"><i class="fas fa-share"></i> Share</button>
+              <button class="fb-action-btn" id="fb-share-btn-2" onclick="fbOpenShare(2)">
+                <i class="fas fa-share"></i> Share
+              </button>
             </div>
           </div>
 
         </div><!-- /fb-feed -->
+
+        <!-- Share Bottom Sheet (overlays feed) -->
+        <div class="fb-share-overlay" id="fb-share-overlay" onclick="fbCloseShare()"></div>
+        <div class="fb-share-sheet" id="fb-share-sheet">
+          <div class="fb-share-handle"></div>
+          <div class="fb-share-title">Share Post</div>
+          <div class="fb-share-preview" id="fb-share-preview">
+            <div class="fb-share-preview-avatar">👩</div>
+            <div>
+              <div class="fb-share-preview-name">Maria Santos</div>
+              <div class="fb-share-preview-text">Enjoying the beautiful sunset at Rizal Park today! 🌅</div>
+            </div>
+          </div>
+          <div class="fb-share-options">
+            <button class="fb-share-option" id="fb-share-now-btn" onclick="fbShareNow()">
+              <div class="fb-share-option-icon" style="background:#1877f2"><i class="fas fa-share-alt"></i></div>
+              <div class="fb-share-option-info">
+                <div class="fb-share-option-title">Share Now</div>
+                <div class="fb-share-option-desc">Instantly share to your timeline</div>
+              </div>
+            </button>
+            <button class="fb-share-option" onclick="fbCloseShare()">
+              <div class="fb-share-option-icon" style="background:#6c5ce7"><i class="fas fa-pen"></i></div>
+              <div class="fb-share-option-info">
+                <div class="fb-share-option-title">Share with Caption</div>
+                <div class="fb-share-option-desc">Add your thoughts before sharing</div>
+              </div>
+            </button>
+            <button class="fb-share-option" onclick="fbCloseShare()">
+              <div class="fb-share-option-icon" style="background:#fd79a8"><i class="fas fa-user-friends"></i></div>
+              <div class="fb-share-option-info">
+                <div class="fb-share-option-title">Share to Story</div>
+                <div class="fb-share-option-desc">Visible for 24 hours</div>
+              </div>
+            </button>
+            <button class="fb-share-option" onclick="fbCloseShare()">
+              <div class="fb-share-option-icon" style="background:#00b894"><i class="fas fa-paper-plane"></i></div>
+              <div class="fb-share-option-info">
+                <div class="fb-share-option-title">Send in Messenger</div>
+                <div class="fb-share-option-desc">Send directly to a friend</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Share Success Toast inside feed -->
+        <div class="fb-share-success" id="fb-share-success">
+          ✅ Post shared to your timeline!
+        </div>
+
       </div><!-- /fb-home -->
 
       <!-- PHOTO UPLOAD — Step 1: Gallery -->
@@ -685,7 +935,7 @@
         <div class="guide-bubble-header">
           <div class="guide-kai-avatar">🤖</div>
           <span class="guide-kai-label">K·A·I GUIDE</span>
-          <span class="guide-step-badge" id="guide-step-badge">1/8</span>
+          <span class="guide-step-badge" id="guide-step-badge">1/9</span>
         </div>
         <div class="guide-message" id="guide-message"></div>
         <div class="guide-tap-hint" id="guide-tap-hint">👆 Tap the highlighted area</div>

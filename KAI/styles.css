@@ -561,10 +561,25 @@ body::before {
 /* ═══════════════════════════════════════════
    KAI GUIDE OVERLAY
 ═══════════════════════════════════════════ */
-#kai-guide-overlay { position:absolute; inset:0; z-index:500; display:none; pointer-events:none; }
-#kai-guide-overlay.active { display:block; }
+#kai-guide-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: none;
+  pointer-events: none;
+  border-radius: 30px;
+  overflow: hidden;
+}
+#kai-guide-overlay.active { display: block; }
 
-#kai-guide-backdrop { position:absolute; inset:0; pointer-events:none; }
+#kai-guide-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 30px;
+}
+
+#kai-guide-ring { pointer-events: none; }
 
 #kai-guide-ring {
   position:absolute; border:3px solid rgba(255,255,255,0.9); border-radius:14px;
@@ -909,3 +924,299 @@ body::before {
 
 /* FB success header */
 .fb-flow-header-center { justify-content: center; }
+
+/* ═══════════════════════════════════════════
+   GCASH — RECEIVE / QR CODE SCREENS
+═══════════════════════════════════════════ */
+
+/* Receive option cards */
+.gcash-receive-option {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border: 1.5px solid #e9ecef;
+  transition: all .15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+.gcash-receive-option:active { transform: scale(.98); border-color: #0070ba; }
+.gcash-receive-option-icon {
+  width: 46px; height: 46px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff; flex-shrink: 0;
+}
+.gcash-receive-option-info { flex: 1; }
+.gcash-receive-option-title { font-size: 13px; font-weight: 700; color: #222; font-family: 'Inter', sans-serif; }
+.gcash-receive-option-desc  { font-size: 10px; color: #888; margin-top: 2px; line-height: 1.4; font-family: 'Inter', sans-serif; }
+.gcash-receive-option-arrow { color: #bbb; font-size: 12px; }
+
+.gcash-receive-tip {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: #166534;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+}
+.gcash-receive-tip i { color: #22c55e; font-size: 13px; margin-top: 1px; flex-shrink: 0; }
+
+/* QR Card */
+.gcash-qr-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.gcash-qr-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.gcash-avatar-circle {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg,#0070ba,#00a8e0);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.gcash-qr-name   { font-size: 13px; font-weight: 700; color: #222; font-family: 'Inter', sans-serif; }
+.gcash-qr-number { font-size: 11px; color: #888; font-family: 'Inter', sans-serif; margin-top: 1px; }
+
+/* QR Frame */
+.gcash-qr-frame {
+  width: 170px; height: 170px;
+  border: 2.5px dashed #d0dde8;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+}
+.gcash-qr-locked {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; color: #bbb; text-align: center; padding: 12px;
+}
+.gcash-qr-locked i   { font-size: 32px; color: #d0dde8; }
+.gcash-qr-locked span { font-size: 11px; font-weight: 700; color: #aaa; font-family: 'Inter', sans-serif; }
+.gcash-qr-locked small { font-size: 9px; color: #bbb; font-family: 'Inter', sans-serif; }
+
+.gcash-qr-active  { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.gcash-qr-svg     { width: 140px; height: 140px; }
+.gcash-qr-scan-label { font-size: 9px; font-weight: 700; color: #0070ba; letter-spacing: 1px; text-transform: uppercase; font-family: 'Share Tech Mono', monospace; }
+
+/* QR amount row */
+.gcash-qr-amount-row { width: 100%; }
+.gcash-qr-amount-label { font-size: 10px; color: #888; font-weight: 700; font-family: 'Inter', sans-serif; display: block; margin-bottom: 5px; }
+.gcash-qr-amount-input-wrap {
+  display: flex; align-items: center; gap: 6px;
+  background: #f8f9fa; border: 2px solid #e9ecef;
+  border-radius: 10px; padding: 8px 12px;
+}
+.gcash-qr-peso { font-size: 16px; font-weight: 700; color: #0070ba; }
+.gcash-qr-amount-input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 16px; font-weight: 700; color: #222; font-family: 'Inter', sans-serif;
+}
+
+/* How it works steps */
+.gcash-qr-steps-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+.gcash-qr-step-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 7px 0;
+  font-size: 12px; color: #444; font-family: 'Inter', sans-serif;
+  border-bottom: 1px solid #f0f0f0;
+}
+.gcash-qr-step-row:last-child { border-bottom: none; }
+.gcash-qr-step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg,#00b894,#00cec9);
+  color: #fff; font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Activate btn icon */
+#gcash-activate-qr-btn i { margin-right: 6px; }
+
+/* QR Success display */
+.gcash-qr-display {
+  background: #f8fafc;
+  border: 2px solid #e9ecef;
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gcash-qr-svg-success { width: 130px; height: 130px; }
+
+/* QR Share row */
+.gcash-qr-share-row { display: flex; gap: 10px; width: 100%; }
+.gcash-qr-share-btn {
+  flex: 1; padding: 10px; border-radius: 10px;
+  background: #f0f4f8; border: 1.5px solid #d0dde8;
+  color: #0070ba; font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
+/* Receive option icon colors */
+.gcash-roi-green  { background: linear-gradient(135deg,#00b894,#00cec9); }
+.gcash-roi-purple { background: linear-gradient(135deg,#6c5ce7,#a29bfe); }
+.gcash-roi-blue   { background: linear-gradient(135deg,#0070ba,#00a8e0); }
+
+/* QR active panel hidden by default */
+.gcash-qr-active-hidden { display: none; }
+
+/* QR success ring - green */
+.gcash-success-ring-green { background: linear-gradient(135deg,#00b894,#00cec9); }
+
+/* QR steps title spacing */
+.gcash-qr-steps-title { margin-bottom: 10px; }
+.gcash-qr-active-hidden { display: none !important; }
+
+/* ═══════════════════════════════════════════
+   FACEBOOK — REACTIONS & SHARE
+═══════════════════════════════════════════ */
+
+/* Like button active state */
+.fb-action-btn.liked { color: #1877f2; font-weight: 700; }
+.fb-action-btn.liked i { color: #1877f2; }
+
+/* Reaction picker bubble */
+.fb-reaction-picker {
+  display: none;
+  position: absolute;
+  left: 8px;
+  bottom: 54px;
+  background: #fff;
+  border-radius: 30px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.18), 0 1px 6px rgba(0,0,0,.1);
+  flex-direction: row;
+  gap: 4px;
+  z-index: 50;
+  border: 1px solid #e4e6eb;
+  animation: reactionPop .18s cubic-bezier(.4,0,.2,1);
+}
+.fb-reaction-picker.visible { display: flex; }
+@keyframes reactionPop {
+  from { opacity:0; transform: scale(.7) translateY(6px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.fb-reaction-emoji {
+  background: none;
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  padding: 2px 3px;
+  border-radius: 50%;
+  transition: transform .12s;
+  line-height: 1;
+}
+.fb-reaction-emoji:hover { transform: scale(1.4) translateY(-4px); }
+
+/* Ensure post-actions is relative so picker positions correctly */
+.fb-post-actions { position: relative; }
+
+/* Share bottom sheet */
+.fb-share-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 60;
+}
+.fb-share-overlay.visible { display: block; }
+
+.fb-share-sheet {
+  position: absolute;
+  bottom: -100%;
+  left: 0; right: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 10px 16px 32px;
+  z-index: 61;
+  transition: bottom .3s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 -4px 30px rgba(0,0,0,.15);
+}
+.fb-share-sheet.open { bottom: 0; }
+
+.fb-share-handle {
+  width: 36px; height: 4px;
+  background: #e4e6eb;
+  border-radius: 2px;
+  margin: 0 auto 14px;
+}
+.fb-share-title {
+  font-size: 15px; font-weight: 800; color: #050505;
+  font-family: 'Inter', sans-serif;
+  text-align: center; margin-bottom: 14px;
+}
+
+/* Post preview inside share sheet */
+.fb-share-preview {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #f0f2f5; border-radius: 12px;
+  padding: 10px 12px; margin-bottom: 14px;
+  border: 1px solid #e4e6eb;
+}
+.fb-share-preview-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #e4e6eb;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.fb-share-preview-name { font-size: 12px; font-weight: 700; color: #050505; font-family: 'Inter', sans-serif; }
+.fb-share-preview-text { font-size: 11px; color: #65676b; margin-top: 2px; font-family: 'Inter', sans-serif; line-height: 1.4; }
+
+/* Share options */
+.fb-share-options { display: flex; flex-direction: column; gap: 4px; }
+.fb-share-option {
+  display: flex; align-items: center; gap: 12px;
+  background: none; border: none; padding: 10px 4px;
+  cursor: pointer; border-radius: 10px;
+  transition: background .15s; width: 100%;
+  border-bottom: 1px solid #f0f2f5;
+}
+.fb-share-option:last-child { border-bottom: none; }
+.fb-share-option:active { background: #f0f2f5; }
+.fb-share-option-icon {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px; flex-shrink: 0;
+}
+.fb-share-option-info { text-align: left; }
+.fb-share-option-title { font-size: 13px; font-weight: 700; color: #050505; font-family: 'Inter', sans-serif; }
+.fb-share-option-desc  { font-size: 10px; color: #65676b; margin-top: 1px; font-family: 'Inter', sans-serif; }
+
+/* Share success banner */
+.fb-share-success {
+  position: absolute;
+  bottom: 80px; left: 12px; right: 12px;
+  background: #1877f2; color: #fff;
+  border-radius: 10px; padding: 11px 14px;
+  font-size: 12px; font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  text-align: center; z-index: 70;
+  opacity: 0; transform: translateY(12px);
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.fb-share-success.show { opacity: 1; transform: translateY(0); }
