@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAI — Smart Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@100;300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.61/build/spline-viewer.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="desktop-label">KAI OS — v2.4.1 // VIRTUAL DEVICE SIMULATOR</div>
+
+<div class="phone-wrap">
+  <div class="phone-shell"></div>
+  <div class="phone-screen" id="phone-screen">
+
+    <!-- NOTCH + STATUS -->
+    <div class="notch">
+      <div class="notch-cam"></div>
+      <div class="notch-speaker"></div>
+      <div class="notch-cam"></div>
+    </div>
+    <div class="status-bar">
+      <span id="status-time">00:00</span>
+      <div class="status-icons">
+        <i class="fas fa-wifi"></i><i class="fas fa-signal"></i>
+        <i class="fas fa-battery-three-quarters"></i>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <!-- ══ HOME ══ -->
+    <div class="view active" id="home-screen">
+      <div class="home-greeting" id="home-greeting">GOOD MORNING</div>
+      <div class="home-date">
+        <span id="home-time-big">00:00</span>
+        <span id="home-date-text">SAT, FEB 28</span>
+      </div>
+      <div class="app-grid">
+        <div class="app-icon">
+          <div class="app-icon-img ai-google">🌐</div>
+          <div class="app-icon-label">Google</div>
+        </div>
+        <div class="app-icon">
+          <div class="app-icon-img ai-youtube">▶️</div>
+          <div class="app-icon-label">YouTube</div>
+        </div>
+        <div class="app-icon">
+          <div class="app-icon-img ai-facebook">📘</div>
+          <div class="app-icon-label">Facebook</div>
+        </div>
+        <div class="app-icon">
+          <div class="app-icon-img ai-gcash" id="home-gcash-icon">💳</div>
+          <div class="app-icon-label">GCash</div>
+        </div>
+        <div class="app-icon">
+          <div class="app-icon-img ai-calc">🔢</div>
+          <div class="app-icon-label">Calc</div>
+        </div>
+        <div class="app-icon">
+          <div class="app-icon-img ai-clock">🕐</div>
+          <div class="app-icon-label">Clock</div>
+        </div>
+        <div class="app-icon">
+          <div class="app-icon-img ai-wiki">📖</div>
+          <div class="app-icon-label">Wiki</div>
+        </div>
+        <div class="app-icon">
+          <div class="app-icon-img ai-kai" style="position:relative">🤖</div>
+          <div class="app-icon-label">KAI</div>
+        </div>
+      </div>
+      <div class="home-dock">
+        <div class="dock-icon ai-gcash" style="border-radius:13px">💳</div>
+        <div class="dock-icon ai-kai" style="border-radius:13px">🤖</div>
+        <div class="dock-icon ai-facebook" style="border-radius:13px">📘</div>
+      </div>
+    </div>
+
+    <!-- ══ KAI ══ -->
+    <div class="view" id="kai-screen">
+      <div class="kai-topbar">
+        <button class="kai-back-btn" onclick="goHome()">
+          <i class="fas fa-chevron-left"></i> HOME
+        </button>
+      </div>
+      <div class="kai-spline-wrap">
+        <spline-viewer url="https://prod.spline.design/xdEivTgPKwnKRTmc/scene.splinecode"></spline-viewer>
+      </div>
+      <div class="kai-bottom">
+        <h1 class="kai-name">K A I</h1>
+        <p class="kai-subtitle" id="kai-subtitle">Try saying: "Help me send money"</p>
+        <div class="kai-input-bar" id="kai-input-bar" onclick="startListening()">
+          <div class="kai-mic-icon" id="kai-mic-icon"><i class="fas fa-microphone-alt"></i></div>
+          <span class="kai-bar-text" id="kai-transcript">Tap to speak</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ GCASH ══ -->
+    <div class="view" id="gcash-screen">
+
+      <!-- HOME -->
+      <div class="gcash-subview active" id="gcash-home">
+        <div class="gcash-header">
+          <div class="gcash-header-row">
+            <button class="gcash-back" onclick="goHome()">
+              <i class="fas fa-chevron-left"></i> Home
+            </button>
+            <span class="gcash-logo-text">GCash</span>
+            <div class="gcash-notif"><i class="fas fa-bell"></i></div>
+          </div>
+          <div class="gcash-balance-card">
+            <div class="gcash-balance-label">My Balance</div>
+            <div class="gcash-balance-amt">₱ 2,450.00</div>
+            <div class="gcash-balance-sub">Account verified ✓</div>
+          </div>
+        </div>
+        <div class="gcash-body">
+          <div class="gcash-section-title">Quick Actions</div>
+          <div class="gcash-actions-grid">
+            <button class="gcash-action-btn" id="gcash-send-btn" onclick="gcashGoSend()">
+              <div class="gcash-action-icon ga-send">
+                <i class="fas fa-paper-plane" style="color:#fff;font-size:17px"></i>
+              </div>
+              <span class="gcash-action-label">Send Money</span>
+            </button>
+            <button class="gcash-action-btn">
+              <div class="gcash-action-icon ga-receive">
+                <i class="fas fa-arrow-down" style="color:#fff;font-size:17px"></i>
+              </div>
+              <span class="gcash-action-label">Receive</span>
+            </button>
+            <button class="gcash-action-btn">
+              <div class="gcash-action-icon ga-pay">
+                <i class="fas fa-qrcode" style="color:#fff;font-size:17px"></i>
+              </div>
+              <span class="gcash-action-label">Pay QR</span>
+            </button>
+            <button class="gcash-action-btn">
+              <div class="gcash-action-icon ga-load">
+                <i class="fas fa-sim-card" style="color:#fff;font-size:17px"></i>
+              </div>
+              <span class="gcash-action-label">Buy Load</span>
+            </button>
+            <button class="gcash-action-btn">
+              <div class="gcash-action-icon ga-bills">
+                <i class="fas fa-file-invoice" style="color:#fff;font-size:17px"></i>
+              </div>
+              <span class="gcash-action-label">Pay Bills</span>
+            </button>
+            <button class="gcash-action-btn">
+              <div class="gcash-action-icon ga-bank">
+                <i class="fas fa-university" style="color:#fff;font-size:17px"></i>
+              </div>
+              <span class="gcash-action-label">Bank</span>
+            </button>
+            <button class="gcash-action-btn">
+              <div class="gcash-action-icon ga-qr">
+                <i class="fas fa-money-bill-wave" style="color:#fff;font-size:17px"></i>
+              </div>
+              <span class="gcash-action-label">Cash In</span>
+            </button>
+            <button class="gcash-action-btn">
+              <div class="gcash-action-icon ga-more">
+                <i class="fas fa-ellipsis-h" style="color:#fff;font-size:17px"></i>
+              </div>
+              <span class="gcash-action-label">More</span>
+            </button>
+          </div>
+          <div class="gcash-promo">
+            <div class="gcash-promo-badge">⚡ LIMITED OFFER</div>
+            <h3>Send Money for FREE!</h3>
+            <p>Zero transfer fees to any GCash wallet this month.</p>
+          </div>
+          <div class="gcash-section-title">Recent Transactions</div>
+          <div class="gcash-txn-list">
+            <div class="gcash-txn">
+              <div class="gcash-txn-icon" style="background:#e8f4fd">📤</div>
+              <div class="gcash-txn-info">
+                <div class="gcash-txn-name">Sent to Maria Santos</div>
+                <div class="gcash-txn-date">Feb 26, 2026 · 2:30 PM</div>
+              </div>
+              <div class="gcash-txn-amt debit">-₱500.00</div>
+            </div>
+            <div class="gcash-txn">
+              <div class="gcash-txn-icon" style="background:#e8fdf4">📥</div>
+              <div class="gcash-txn-info">
+                <div class="gcash-txn-name">Received from Juan Dela Cruz</div>
+                <div class="gcash-txn-date">Feb 24, 2026 · 10:15 AM</div>
+              </div>
+              <div class="gcash-txn-amt credit">+₱1,200.00</div>
+            </div>
+            <div class="gcash-txn">
+              <div class="gcash-txn-icon" style="background:#fff8e1">🧾</div>
+              <div class="gcash-txn-info">
+                <div class="gcash-txn-name">Meralco Bill Payment</div>
+                <div class="gcash-txn-date">Feb 22, 2026 · 9:00 AM</div>
+              </div>
+              <div class="gcash-txn-amt debit">-₱850.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 1: Recipient -->
+      <div class="gcash-subview" id="gcash-send-step1">
+        <div class="gcash-flow-header">
+          <button class="gcash-flow-back" onclick="gcashBack('gcash-home')">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="gcash-flow-title">Send Money</span>
+        </div>
+        <div class="gcash-flow-body">
+          <div class="gcash-steps">
+            <div class="gcash-step-dot active">1</div>
+            <div class="gcash-step-line"></div>
+            <div class="gcash-step-dot pending">2</div>
+            <div class="gcash-step-line"></div>
+            <div class="gcash-step-dot pending">3</div>
+          </div>
+          <div class="gcash-form-card">
+            <h3>Who are you sending to?</h3>
+            <label class="gcash-label">Mobile Number</label>
+            <input class="gcash-input" id="gcash-number-input" type="tel"
+              placeholder="09XX XXX XXXX" maxlength="11"
+              oninput="gcashValidateStep1()">
+            <div class="gcash-input-note">Enter the recipient's GCash-registered number</div>
+            <div class="gcash-contact-row">
+              <div class="gcash-contact-chip" onclick="gcashFillContact('09171234567')">👩 Maria</div>
+              <div class="gcash-contact-chip" onclick="gcashFillContact('09281234567')">👨 Juan</div>
+              <div class="gcash-contact-chip" onclick="gcashFillContact('09391234567')">👧 Ana</div>
+            </div>
+          </div>
+          <div class="gcash-warning">
+            <i class="fas fa-shield-alt"></i>
+            <p><strong>Anti-Scam Reminder:</strong> Only send money to people you personally know. Never send to strangers asking for help online.</p>
+          </div>
+          <button class="gcash-btn" id="gcash-next-btn-1" onclick="gcashGoStep2()" disabled>
+            Continue →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Amount -->
+      <div class="gcash-subview" id="gcash-send-step2">
+        <div class="gcash-flow-header">
+          <button class="gcash-flow-back" onclick="gcashBack('gcash-send-step1')">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="gcash-flow-title">Enter Amount</span>
+        </div>
+        <div class="gcash-flow-body">
+          <div class="gcash-steps">
+            <div class="gcash-step-dot done">✓</div>
+            <div class="gcash-step-line done"></div>
+            <div class="gcash-step-dot active">2</div>
+            <div class="gcash-step-line"></div>
+            <div class="gcash-step-dot pending">3</div>
+          </div>
+          <div class="gcash-form-card">
+            <h3>How much to send?</h3>
+            <label class="gcash-label">Amount (₱)</label>
+            <input class="gcash-input" id="gcash-amount-input" type="number"
+              placeholder="0.00" min="1" max="2450"
+              oninput="gcashValidateStep2()">
+            <div class="gcash-input-note">Available balance: ₱2,450.00</div>
+            <div class="gcash-quick-amts" id="gcash-quick-amts">
+              <div class="gcash-amt-chip" onclick="gcashSetAmt(100)">₱100</div>
+              <div class="gcash-amt-chip" onclick="gcashSetAmt(200)">₱200</div>
+              <div class="gcash-amt-chip" onclick="gcashSetAmt(500)">₱500</div>
+              <div class="gcash-amt-chip" onclick="gcashSetAmt(1000)">₱1,000</div>
+            </div>
+          </div>
+          <div class="gcash-form-card">
+            <h3>Add a note <span style="color:#bbb;font-weight:400">(optional)</span></h3>
+            <input class="gcash-input" id="gcash-note-input" type="text"
+              placeholder="e.g. For groceries">
+          </div>
+          <button class="gcash-btn" id="gcash-next-btn-2" onclick="gcashGoReview()" disabled>
+            Review Details →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Review -->
+      <div class="gcash-subview" id="gcash-send-review">
+        <div class="gcash-flow-header">
+          <button class="gcash-flow-back" onclick="gcashBack('gcash-send-step2')">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="gcash-flow-title">Review & Confirm</span>
+        </div>
+        <div class="gcash-flow-body">
+          <div class="gcash-steps">
+            <div class="gcash-step-dot done">✓</div>
+            <div class="gcash-step-line done"></div>
+            <div class="gcash-step-dot done">✓</div>
+            <div class="gcash-step-line done"></div>
+            <div class="gcash-step-dot active">3</div>
+          </div>
+          <div class="gcash-form-card">
+            <h3>Transaction Summary</h3>
+            <div class="gcash-review-amt" id="review-amt">₱0.00</div>
+            <div class="gcash-review-row">
+              <span class="gcash-review-label">Sending to</span>
+              <span class="gcash-review-val" id="review-to">—</span>
+            </div>
+            <div class="gcash-review-row">
+              <span class="gcash-review-label">Number</span>
+              <span class="gcash-review-val" id="review-number">—</span>
+            </div>
+            <div class="gcash-review-row">
+              <span class="gcash-review-label">Note</span>
+              <span class="gcash-review-val" id="review-note">—</span>
+            </div>
+            <div class="gcash-review-row">
+              <span class="gcash-review-label">Transfer Fee</span>
+              <span class="gcash-review-val" style="color:#00b894;font-weight:700">FREE ✓</span>
+            </div>
+          </div>
+          <div class="gcash-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Double-check the number and amount. <strong>Transactions cannot be reversed.</strong> Only proceed if you personally know this person.</p>
+          </div>
+          <button class="gcash-btn" id="gcash-confirm-btn" onclick="gcashGoPin()">
+            Confirm &amp; Enter PIN
+          </button>
+          <button class="gcash-btn-ghost" onclick="gcashBack('gcash-home')">Cancel</button>
+        </div>
+      </div>
+
+      <!-- PIN Entry -->
+      <div class="gcash-subview" id="gcash-send-pin">
+        <div class="gcash-flow-header">
+          <button class="gcash-flow-back" onclick="gcashBack('gcash-send-review')">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="gcash-flow-title">Enter MPIN</span>
+        </div>
+        <div class="gcash-flow-body" style="align-items:center;padding-top:20px;gap:16px;">
+          <div style="text-align:center">
+            <div style="font-size:36px;margin-bottom:8px">🔐</div>
+            <div style="font-size:14px;font-weight:700;color:#222;font-family:'Inter',sans-serif">
+              Enter your 4-digit MPIN
+            </div>
+            <div style="font-size:11px;color:#888;margin-top:4px;font-family:'Inter',sans-serif">
+              to authorize this transaction
+            </div>
+          </div>
+          <div class="gcash-pin-dots" id="pin-dots">
+            <div class="gcash-pin-dot" id="pd0"></div>
+            <div class="gcash-pin-dot" id="pd1"></div>
+            <div class="gcash-pin-dot" id="pd2"></div>
+            <div class="gcash-pin-dot" id="pd3"></div>
+          </div>
+          <div class="gcash-pin-pad" id="gcash-pin-pad" style="width:100%">
+            <button class="gcash-pin-btn" onclick="pinPress('1')">1<span>&nbsp;</span></button>
+            <button class="gcash-pin-btn" onclick="pinPress('2')">2<span>ABC</span></button>
+            <button class="gcash-pin-btn" onclick="pinPress('3')">3<span>DEF</span></button>
+            <button class="gcash-pin-btn" onclick="pinPress('4')">4<span>GHI</span></button>
+            <button class="gcash-pin-btn" onclick="pinPress('5')">5<span>JKL</span></button>
+            <button class="gcash-pin-btn" onclick="pinPress('6')">6<span>MNO</span></button>
+            <button class="gcash-pin-btn" onclick="pinPress('7')">7<span>PQRS</span></button>
+            <button class="gcash-pin-btn" onclick="pinPress('8')">8<span>TUV</span></button>
+            <button class="gcash-pin-btn" onclick="pinPress('9')">9<span>WXYZ</span></button>
+            <button class="gcash-pin-btn" onclick="" style="opacity:.3" disabled></button>
+            <button class="gcash-pin-btn" onclick="pinPress('0')">0</button>
+            <button class="gcash-pin-btn del" onclick="pinBackspace()">
+              <i class="fas fa-backspace"></i>
+            </button>
+          </div>
+          <div style="font-size:10px;color:#bbb;font-family:'Inter',sans-serif">
+            Demo PIN: <strong>1234</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="gcash-subview" id="gcash-send-success">
+        <div class="gcash-flow-header" style="justify-content:center">
+          <span class="gcash-flow-title">Transaction Complete</span>
+        </div>
+        <div class="gcash-success">
+          <div class="gcash-success-ring"><i class="fas fa-check"></i></div>
+          <h2>Money Sent!</h2>
+          <div class="gcash-success-amt" id="success-amt">₱0.00</div>
+          <p>Successfully sent to<br><strong id="success-to">—</strong></p>
+          <div class="gcash-success-ref" id="success-ref">REF: GC—</div>
+          <button class="gcash-btn" style="margin-top:14px" onclick="gcashGoHome()">
+            Back to GCash Home
+          </button>
+          <button class="gcash-btn-ghost" onclick="goHome()">Go to Home Screen</button>
+        </div>
+      </div>
+
+    </div><!-- /#gcash-screen -->
+
+    <!-- CALCULATOR -->
+    <div class="view app-screen" id="calc-screen">
+      <div class="app-topbar">
+        <button class="back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> Home</button>
+        <span class="app-title">Calculator</span>
+        <div style="width:26px"></div>
+      </div>
+      <div class="app-content" style="display:flex;flex-direction:column;padding:16px;gap:10px;">
+        <div class="calc-display">
+          <div class="calc-expression" id="calc-expr"></div>
+          <div class="calc-result" id="calc-disp">0</div>
+        </div>
+        <div class="calc-grid">
+          <button class="calc-btn clear" onclick="calcClear()">C</button>
+          <button class="calc-btn op" onclick="calcInput('(')">(</button>
+          <button class="calc-btn op" onclick="calcInput(')')">)</button>
+          <button class="calc-btn op" onclick="calcOp('/')">÷</button>
+          <button class="calc-btn" onclick="calcInput('7')">7</button>
+          <button class="calc-btn" onclick="calcInput('8')">8</button>
+          <button class="calc-btn" onclick="calcInput('9')">9</button>
+          <button class="calc-btn op" onclick="calcOp('*')">×</button>
+          <button class="calc-btn" onclick="calcInput('4')">4</button>
+          <button class="calc-btn" onclick="calcInput('5')">5</button>
+          <button class="calc-btn" onclick="calcInput('6')">6</button>
+          <button class="calc-btn op" onclick="calcOp('-')">−</button>
+          <button class="calc-btn" onclick="calcInput('1')">1</button>
+          <button class="calc-btn" onclick="calcInput('2')">2</button>
+          <button class="calc-btn" onclick="calcInput('3')">3</button>
+          <button class="calc-btn op" onclick="calcOp('+')">+</button>
+          <button class="calc-btn" onclick="calcInput('0')">0</button>
+          <button class="calc-btn" onclick="calcInput('.')">.</button>
+          <button class="calc-btn op" onclick="calcBackspace()">⌫</button>
+          <button class="calc-btn eq" onclick="calcEquals()">=</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLOCK -->
+    <div class="view app-screen" id="clock-screen">
+      <div class="app-topbar">
+        <button class="back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> Home</button>
+        <span class="app-title">Clock</span>
+        <div style="width:26px"></div>
+      </div>
+      <div class="app-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+        <div class="clock-analog">
+          <div class="clock-marks" id="clock-marks"></div>
+          <div class="clock-hand hour-hand" id="hour-hand"></div>
+          <div class="clock-hand min-hand"  id="min-hand"></div>
+          <div class="clock-hand sec-hand"  id="sec-hand"></div>
+          <div class="clock-center"></div>
+        </div>
+        <div class="clock-digital" id="clock-digital">00:00:00</div>
+        <div class="clock-date-text" id="clock-date-text">SATURDAY, FEB 28</div>
+      </div>
+    </div>
+
+    <!-- WIKIPEDIA -->
+    <div class="view app-screen" id="wiki-screen">
+      <div class="app-topbar">
+        <button class="back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> Home</button>
+        <span class="app-title">Wikipedia</span>
+        <div style="width:26px"></div>
+      </div>
+      <div class="app-content" style="display:flex;flex-direction:column;padding:14px;gap:10px;overflow-y:auto;">
+        <div class="wiki-search-bar">
+          <input class="wiki-input" id="wiki-input" placeholder="Search Wikipedia..."
+            onkeydown="if(event.key==='Enter')wikiSearch()">
+          <button class="wiki-search-btn" onclick="wikiSearch()"><i class="fas fa-search"></i></button>
+        </div>
+        <div id="wiki-result"></div>
+      </div>
+    </div>
+
+    <!-- EXTERNAL -->
+    <div class="view app-screen" id="external-screen">
+      <div class="app-topbar">
+        <button class="back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> Home</button>
+        <span class="app-title" id="external-title">App</span>
+        <div style="width:26px"></div>
+      </div>
+      <div class="app-content">
+        <div class="iframe-overlay">
+          <div class="iframe-logo" id="iframe-logo"></div>
+          <div class="iframe-app-name" id="iframe-app-name"></div>
+          <div class="iframe-msg" id="iframe-msg"></div>
+          <button class="iframe-open-btn" onclick="openExternal()">OPEN IN BROWSER ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOME BAR -->
+    <div class="home-indicator" onclick="stopGuide();goHome();"></div>
+
+    <!-- ══ KAI GUIDE OVERLAY ══ -->
+    <div id="kai-guide-overlay">
+      <canvas id="kai-guide-backdrop"></canvas>
+      <div id="kai-guide-ring"></div>
+      <div id="kai-guide-bubble" class="bubble-arrow-bottom">
+        <div class="guide-bubble-header">
+          <div class="guide-kai-avatar">🤖</div>
+          <span class="guide-kai-label">K·A·I GUIDE</span>
+          <span class="guide-step-badge" id="guide-step-badge">1/8</span>
+        </div>
+        <div class="guide-message" id="guide-message"></div>
+        <div class="guide-tap-hint" id="guide-tap-hint">👆 Tap the highlighted area</div>
+        <div class="guide-btn-row">
+          <button class="guide-stop-btn" onclick="stopGuide()">✕ Stop</button>
+          <button class="guide-ok-btn" id="guide-ok-btn" onclick="guideNextManual()">
+            I did it →
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /phone-screen -->
+</div><!-- /phone-wrap -->
+
+<script src="script.js"></script>
+</body>
+</html>
