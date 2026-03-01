@@ -9,6 +9,121 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.61/build/spline-viewer.js"></script>
 <link rel="stylesheet" href="styles.css">
+<style>
+  /* Fix: ensure app screens never overflow the phone shell */
+  .app-screen {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+  }
+  .app-screen .app-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .app-screen .app-topbar {
+    flex-shrink: 0;
+  }
+  /* Fix iframe-overlay to stay inside app-content */
+  .iframe-overlay {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: radial-gradient(ellipse at 50% 40%, #001a2e, #040d14);
+  }
+  /* KEY FIX: all views must respect phone shell's rounded corners */
+  .view {
+    border-radius: 30px;
+    overflow: hidden;
+  }
+  /* Prevent transform-based animation from breaking overflow clipping */
+  #phone-screen {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    isolation: isolate;
+  }
+
+  /* ── Home Screen KAI Branding ── */
+  .home-kai-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 46px 20px 0;
+    flex-shrink: 0;
+  }
+  .home-kai-logo {
+    font-size: 28px;
+    filter: drop-shadow(0 0 8px rgba(0,229,255,0.6));
+  }
+  .home-kai-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+  }
+  .home-kai-name {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px rgba(0,229,255,0.7), 0 0 40px rgba(0,229,255,0.3);
+  }
+  .home-kai-tagline {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: rgba(0,229,255,0.45);
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  /* Adjust home screen padding — brand header handles top spacing */
+  #home-screen {
+    padding-top: 0 !important;
+  }
+  .home-greeting {
+    padding-top: 8px !important;
+    margin-top: 0 !important;
+  }
+
+  /* ── KAI App — Modern Bold Fonts ── */
+  .kai-name {
+    font-family: 'Exo 2', sans-serif !important;
+    font-size: 52px !important;
+    font-weight: 900 !important;
+    letter-spacing: 12px !important;
+    color: #ffffff !important;
+    text-shadow:
+      0 0 30px rgba(255,255,255,0.9),
+      0 0 60px rgba(200,200,255,0.4),
+      0 4px 12px rgba(0,0,0,0.8) !important;
+    text-transform: uppercase;
+    margin-bottom: 2px !important;
+  }
+  .kai-subtitle {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: rgba(255,255,255,0.65) !important;
+    letter-spacing: 0.3px !important;
+    text-align: center;
+  }
+  .kai-bar-text {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    color: #ffffff !important;
+  }
+</style>
 </head>
 <body>
 <div class="grid-bg"></div>
@@ -70,14 +185,17 @@
           <div class="app-icon-label">Wiki</div>
         </div>
         <div class="app-icon">
-          <div class="app-icon-img ai-kai" style="position:relative">🤖</div>
-          <div class="app-icon-label">KAI</div>
+          <div class="app-icon-img ai-maps" style="background:linear-gradient(135deg,#1a3a1a,#2e7d32);--gc:rgba(76,175,80,.6)">🗺️</div>
+          <div class="app-icon-label">Maps</div>
         </div>
       </div>
-      <div class="home-dock">
-        <div class="dock-icon ai-gcash" style="border-radius:13px">💳</div>
-        <div class="dock-icon ai-kai" style="border-radius:13px">🤖</div>
-        <div class="dock-icon ai-facebook" style="border-radius:13px">📘</div>
+
+      <!-- Dock: KAI only -->
+      <div class="home-dock" style="justify-content:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;" onclick="openApp('kai')">
+          <div class="dock-icon ai-kai" style="border-radius:13px">🤖</div>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(255,255,255,0.6);letter-spacing:1.5px;font-weight:700;">KAI</span>
+        </div>
       </div>
     </div>
 
@@ -92,7 +210,7 @@
         <spline-viewer url="https://prod.spline.design/xdEivTgPKwnKRTmc/scene.splinecode"></spline-viewer>
       </div>
       <div class="kai-bottom">
-        <h1 class="kai-name">K A I</h1>
+        <h1 class="kai-name">KAI</h1>
         <p class="kai-subtitle" id="kai-subtitle">Try saying: "Help me send money"</p>
         <div class="kai-input-bar" id="kai-input-bar" onclick="startListening()">
           <div class="kai-mic-icon" id="kai-mic-icon"><i class="fas fa-microphone-alt"></i></div>
@@ -481,8 +599,8 @@
         <span class="app-title" id="external-title">App</span>
         <div style="width:26px"></div>
       </div>
-      <div class="app-content">
-        <div class="iframe-overlay">
+      <div class="app-content" style="overflow:hidden;position:relative;flex:1;">
+        <div class="iframe-overlay" style="position:absolute;inset:0;overflow:hidden;">
           <div class="iframe-logo" id="iframe-logo"></div>
           <div class="iframe-app-name" id="iframe-app-name"></div>
           <div class="iframe-msg" id="iframe-msg"></div>

@@ -21,41 +21,22 @@ window.addEventListener('load', () => {
   speak("Initializing K A I...");
   setTimeout(wishMe, 900);
 
-  // Setup app grid event listener with event delegation
+  // App grid — event delegation (only grid icons, dock handled by inline onclick)
   const appGrid = document.querySelector('.app-grid');
   if (appGrid) {
     appGrid.addEventListener('click', (e) => {
       const icon = e.target.closest('.app-icon');
       if (!icon) return;
-
-      // Determine which app to open based on position in grid
       const icons = Array.from(appGrid.querySelectorAll('.app-icon'));
       const index = icons.indexOf(icon);
-      const apps = ['google', 'youtube', 'facebook', 'gcash', 'calculator', 'clock', 'wikipedia', 'kai'];
-
+      const apps = ['google', 'youtube', 'facebook', 'gcash', 'calculator', 'clock', 'wikipedia', 'maps'];
       if (index >= 0 && apps[index]) {
         openApp(apps[index]);
       }
     });
   }
 
-  // Setup dock event listener with event delegation
-  const dock = document.querySelector('.home-dock');
-  if (dock) {
-    dock.addEventListener('click', (e) => {
-      const icon = e.target.closest('.dock-icon');
-      if (!icon) return;
-
-      // Determine which dock icon was clicked by position
-      const dockIcons = Array.from(dock.querySelectorAll('.dock-icon'));
-      const index = dockIcons.indexOf(icon);
-      const dockApps = ['gcash', 'kai', 'facebook'];
-
-      if (index >= 0 && dockApps[index]) {
-        openApp(dockApps[index]);
-      }
-    });
-  }
+  // NOTE: Dock icons use inline onclick handlers in the HTML — no delegation needed here.
 });
 
 function updateStatusTime() {
@@ -122,9 +103,10 @@ function goHome() {
    OPEN APP
 ═══════════════════════════════════ */
 const appConfig = {
-  google:  { title:'Google',  logo:'🌐', url:'https://google.com',   msg:'Search the web with Google' },
-  youtube: { title:'YouTube', logo:'▶️', url:'https://youtube.com',  msg:'Watch videos on YouTube' },
-  facebook:{ title:'Facebook',logo:'📘', url:'https://facebook.com', msg:'Connect with Facebook' },
+  google:  { title:'Google',  logo:'🌐', url:'https://google.com',         msg:'Search the web with Google' },
+  youtube: { title:'YouTube', logo:'▶️', url:'https://youtube.com',        msg:'Watch videos on YouTube' },
+  facebook:{ title:'Facebook',logo:'📘', url:'https://facebook.com',       msg:'Connect with Facebook' },
+  maps:    { title:'Maps',    logo:'🗺️', url:'https://maps.google.com',    msg:'Explore the world with Google Maps' },
 };
 function openApp(name) {
   if (name === 'kai')        { showView('kai-screen'); return; }
