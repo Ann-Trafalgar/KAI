@@ -9,121 +9,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.61/build/spline-viewer.js"></script>
 <link rel="stylesheet" href="styles.css">
-<style>
-  /* Fix: ensure app screens never overflow the phone shell */
-  .app-screen {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    height: 100%;
-  }
-  .app-screen .app-content {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    min-height: 0;
-  }
-  .app-screen .app-topbar {
-    flex-shrink: 0;
-  }
-  /* Fix iframe-overlay to stay inside app-content */
-  .iframe-overlay {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    background: radial-gradient(ellipse at 50% 40%, #001a2e, #040d14);
-  }
-  /* KEY FIX: all views must respect phone shell's rounded corners */
-  .view {
-    border-radius: 30px;
-    overflow: hidden;
-  }
-  /* Prevent transform-based animation from breaking overflow clipping */
-  #phone-screen {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    isolation: isolate;
-  }
-
-  /* ── Home Screen KAI Branding ── */
-  .home-kai-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 46px 20px 0;
-    flex-shrink: 0;
-  }
-  .home-kai-logo {
-    font-size: 28px;
-    filter: drop-shadow(0 0 8px rgba(0,229,255,0.6));
-  }
-  .home-kai-text {
-    display: flex;
-    flex-direction: column;
-    line-height: 1;
-  }
-  .home-kai-name {
-    font-family: 'Exo 2', sans-serif;
-    font-size: 22px;
-    font-weight: 900;
-    color: #ffffff;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    text-shadow: 0 0 20px rgba(0,229,255,0.7), 0 0 40px rgba(0,229,255,0.3);
-  }
-  .home-kai-tagline {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 9px;
-    color: rgba(0,229,255,0.45);
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    margin-top: 3px;
-  }
-
-  /* Adjust home screen padding — brand header handles top spacing */
-  #home-screen {
-    padding-top: 0 !important;
-  }
-  .home-greeting {
-    padding-top: 8px !important;
-    margin-top: 0 !important;
-  }
-
-  /* ── KAI App — Modern Bold Fonts ── */
-  .kai-name {
-    font-family: 'Exo 2', sans-serif !important;
-    font-size: 52px !important;
-    font-weight: 900 !important;
-    letter-spacing: 12px !important;
-    color: #ffffff !important;
-    text-shadow:
-      0 0 30px rgba(255,255,255,0.9),
-      0 0 60px rgba(200,200,255,0.4),
-      0 4px 12px rgba(0,0,0,0.8) !important;
-    text-transform: uppercase;
-    margin-bottom: 2px !important;
-  }
-  .kai-subtitle {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: rgba(255,255,255,0.65) !important;
-    letter-spacing: 0.3px !important;
-    text-align: center;
-  }
-  .kai-bar-text {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.5px !important;
-    color: #ffffff !important;
-  }
-</style>
 </head>
 <body>
 <div class="grid-bg"></div>
@@ -165,7 +50,7 @@
           <div class="app-icon-label">YouTube</div>
         </div>
         <div class="app-icon">
-          <div class="app-icon-img ai-facebook">📘</div>
+          <div class="app-icon-img ai-facebook" id="fb-app-icon">📘</div>
           <div class="app-icon-label">Facebook</div>
         </div>
         <div class="app-icon">
@@ -185,16 +70,15 @@
           <div class="app-icon-label">Wiki</div>
         </div>
         <div class="app-icon">
-          <div class="app-icon-img ai-maps" style="background:linear-gradient(135deg,#1a3a1a,#2e7d32);--gc:rgba(76,175,80,.6)">🗺️</div>
+          <div class="app-icon-img ai-maps">🗺️</div>
           <div class="app-icon-label">Maps</div>
         </div>
       </div>
 
-      <!-- Dock: KAI only -->
-      <div class="home-dock" style="justify-content:center;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;" onclick="openApp('kai')">
-          <div class="dock-icon ai-kai" style="border-radius:13px">🤖</div>
-          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(255,255,255,0.6);letter-spacing:1.5px;font-weight:700;">KAI</span>
+      <div class="home-dock">
+        <div class="dock-kai-wrapper" onclick="openApp('kai')">
+          <div class="dock-icon ai-kai">🤖</div>
+          <span class="dock-kai-label">KAI</span>
         </div>
       </div>
     </div>
@@ -211,7 +95,7 @@
       </div>
       <div class="kai-bottom">
         <h1 class="kai-name">KAI</h1>
-        <p class="kai-subtitle" id="kai-subtitle">Try saying: "Help me send money"</p>
+        <p class="kai-subtitle" id="kai-subtitle">Try: "Help me send money" or "Upload a photo"</p>
         <div class="kai-input-bar" id="kai-input-bar" onclick="startListening()">
           <div class="kai-mic-icon" id="kai-mic-icon"><i class="fas fa-microphone-alt"></i></div>
           <span class="kai-bar-text" id="kai-transcript">Tap to speak</span>
@@ -243,49 +127,49 @@
           <div class="gcash-actions-grid">
             <button class="gcash-action-btn" id="gcash-send-btn" onclick="gcashGoSend()">
               <div class="gcash-action-icon ga-send">
-                <i class="fas fa-paper-plane" style="color:#fff;font-size:17px"></i>
+                <i class="fas fa-paper-plane"></i>
               </div>
               <span class="gcash-action-label">Send Money</span>
             </button>
             <button class="gcash-action-btn">
               <div class="gcash-action-icon ga-receive">
-                <i class="fas fa-arrow-down" style="color:#fff;font-size:17px"></i>
+                <i class="fas fa-arrow-down"></i>
               </div>
               <span class="gcash-action-label">Receive</span>
             </button>
             <button class="gcash-action-btn">
               <div class="gcash-action-icon ga-pay">
-                <i class="fas fa-qrcode" style="color:#fff;font-size:17px"></i>
+                <i class="fas fa-qrcode"></i>
               </div>
               <span class="gcash-action-label">Pay QR</span>
             </button>
             <button class="gcash-action-btn">
               <div class="gcash-action-icon ga-load">
-                <i class="fas fa-sim-card" style="color:#fff;font-size:17px"></i>
+                <i class="fas fa-sim-card"></i>
               </div>
               <span class="gcash-action-label">Buy Load</span>
             </button>
             <button class="gcash-action-btn">
               <div class="gcash-action-icon ga-bills">
-                <i class="fas fa-file-invoice" style="color:#fff;font-size:17px"></i>
+                <i class="fas fa-file-invoice"></i>
               </div>
               <span class="gcash-action-label">Pay Bills</span>
             </button>
             <button class="gcash-action-btn">
               <div class="gcash-action-icon ga-bank">
-                <i class="fas fa-university" style="color:#fff;font-size:17px"></i>
+                <i class="fas fa-university"></i>
               </div>
               <span class="gcash-action-label">Bank</span>
             </button>
             <button class="gcash-action-btn">
               <div class="gcash-action-icon ga-qr">
-                <i class="fas fa-money-bill-wave" style="color:#fff;font-size:17px"></i>
+                <i class="fas fa-money-bill-wave"></i>
               </div>
               <span class="gcash-action-label">Cash In</span>
             </button>
             <button class="gcash-action-btn">
               <div class="gcash-action-icon ga-more">
-                <i class="fas fa-ellipsis-h" style="color:#fff;font-size:17px"></i>
+                <i class="fas fa-ellipsis-h"></i>
               </div>
               <span class="gcash-action-label">More</span>
             </button>
@@ -298,7 +182,7 @@
           <div class="gcash-section-title">Recent Transactions</div>
           <div class="gcash-txn-list">
             <div class="gcash-txn">
-              <div class="gcash-txn-icon" style="background:#e8f4fd">📤</div>
+              <div class="gcash-txn-icon tint-blue">📤</div>
               <div class="gcash-txn-info">
                 <div class="gcash-txn-name">Sent to Maria Santos</div>
                 <div class="gcash-txn-date">Feb 26, 2026 · 2:30 PM</div>
@@ -306,7 +190,7 @@
               <div class="gcash-txn-amt debit">-₱500.00</div>
             </div>
             <div class="gcash-txn">
-              <div class="gcash-txn-icon" style="background:#e8fdf4">📥</div>
+              <div class="gcash-txn-icon tint-green">📥</div>
               <div class="gcash-txn-info">
                 <div class="gcash-txn-name">Received from Juan Dela Cruz</div>
                 <div class="gcash-txn-date">Feb 24, 2026 · 10:15 AM</div>
@@ -314,7 +198,7 @@
               <div class="gcash-txn-amt credit">+₱1,200.00</div>
             </div>
             <div class="gcash-txn">
-              <div class="gcash-txn-icon" style="background:#fff8e1">🧾</div>
+              <div class="gcash-txn-icon tint-yellow">🧾</div>
               <div class="gcash-txn-info">
                 <div class="gcash-txn-name">Meralco Bill Payment</div>
                 <div class="gcash-txn-date">Feb 22, 2026 · 9:00 AM</div>
@@ -395,7 +279,7 @@
             </div>
           </div>
           <div class="gcash-form-card">
-            <h3>Add a note <span style="color:#bbb;font-weight:400">(optional)</span></h3>
+            <h3>Add a note <span class="gcash-optional">(optional)</span></h3>
             <input class="gcash-input" id="gcash-note-input" type="text"
               placeholder="e.g. For groceries">
           </div>
@@ -438,7 +322,7 @@
             </div>
             <div class="gcash-review-row">
               <span class="gcash-review-label">Transfer Fee</span>
-              <span class="gcash-review-val" style="color:#00b894;font-weight:700">FREE ✓</span>
+              <span class="gcash-review-val gcash-review-free">FREE ✓</span>
             </div>
           </div>
           <div class="gcash-warning">
@@ -460,15 +344,11 @@
           </button>
           <span class="gcash-flow-title">Enter MPIN</span>
         </div>
-        <div class="gcash-flow-body" style="align-items:center;padding-top:20px;gap:16px;">
-          <div style="text-align:center">
-            <div style="font-size:36px;margin-bottom:8px">🔐</div>
-            <div style="font-size:14px;font-weight:700;color:#222;font-family:'Inter',sans-serif">
-              Enter your 4-digit MPIN
-            </div>
-            <div style="font-size:11px;color:#888;margin-top:4px;font-family:'Inter',sans-serif">
-              to authorize this transaction
-            </div>
+        <div class="gcash-flow-body gcash-pin-flow-body">
+          <div class="gcash-pin-header">
+            <div class="gcash-pin-emoji">🔐</div>
+            <div class="gcash-pin-title">Enter your 4-digit MPIN</div>
+            <div class="gcash-pin-hint">to authorize this transaction</div>
           </div>
           <div class="gcash-pin-dots" id="pin-dots">
             <div class="gcash-pin-dot" id="pd0"></div>
@@ -476,7 +356,7 @@
             <div class="gcash-pin-dot" id="pd2"></div>
             <div class="gcash-pin-dot" id="pd3"></div>
           </div>
-          <div class="gcash-pin-pad" id="gcash-pin-pad" style="width:100%">
+          <div class="gcash-pin-pad" id="gcash-pin-pad">
             <button class="gcash-pin-btn" onclick="pinPress('1')">1<span>&nbsp;</span></button>
             <button class="gcash-pin-btn" onclick="pinPress('2')">2<span>ABC</span></button>
             <button class="gcash-pin-btn" onclick="pinPress('3')">3<span>DEF</span></button>
@@ -486,21 +366,19 @@
             <button class="gcash-pin-btn" onclick="pinPress('7')">7<span>PQRS</span></button>
             <button class="gcash-pin-btn" onclick="pinPress('8')">8<span>TUV</span></button>
             <button class="gcash-pin-btn" onclick="pinPress('9')">9<span>WXYZ</span></button>
-            <button class="gcash-pin-btn" onclick="" style="opacity:.3" disabled></button>
+            <button class="gcash-pin-btn gcash-pin-btn-disabled" onclick="" disabled></button>
             <button class="gcash-pin-btn" onclick="pinPress('0')">0</button>
             <button class="gcash-pin-btn del" onclick="pinBackspace()">
               <i class="fas fa-backspace"></i>
             </button>
           </div>
-          <div style="font-size:10px;color:#bbb;font-family:'Inter',sans-serif">
-            Demo PIN: <strong>1234</strong>
-          </div>
+          <div class="gcash-pin-demo">Demo PIN: <strong>1234</strong></div>
         </div>
       </div>
 
       <!-- SUCCESS -->
       <div class="gcash-subview" id="gcash-send-success">
-        <div class="gcash-flow-header" style="justify-content:center">
+        <div class="gcash-flow-header gcash-flow-header-center">
           <span class="gcash-flow-title">Transaction Complete</span>
         </div>
         <div class="gcash-success">
@@ -509,7 +387,7 @@
           <div class="gcash-success-amt" id="success-amt">₱0.00</div>
           <p>Successfully sent to<br><strong id="success-to">—</strong></p>
           <div class="gcash-success-ref" id="success-ref">REF: GC—</div>
-          <button class="gcash-btn" style="margin-top:14px" onclick="gcashGoHome()">
+          <button class="gcash-btn gcash-success-back-btn" onclick="gcashGoHome()">
             Back to GCash Home
           </button>
           <button class="gcash-btn-ghost" onclick="goHome()">Go to Home Screen</button>
@@ -523,9 +401,9 @@
       <div class="app-topbar">
         <button class="back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> Home</button>
         <span class="app-title">Calculator</span>
-        <div style="width:26px"></div>
+        <div class="topbar-spacer"></div>
       </div>
-      <div class="app-content" style="display:flex;flex-direction:column;padding:16px;gap:10px;">
+      <div class="app-content app-content-calc">
         <div class="calc-display">
           <div class="calc-expression" id="calc-expr"></div>
           <div class="calc-result" id="calc-disp">0</div>
@@ -560,9 +438,9 @@
       <div class="app-topbar">
         <button class="back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> Home</button>
         <span class="app-title">Clock</span>
-        <div style="width:26px"></div>
+        <div class="topbar-spacer"></div>
       </div>
-      <div class="app-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+      <div class="app-content app-content-clock">
         <div class="clock-analog">
           <div class="clock-marks" id="clock-marks"></div>
           <div class="clock-hand hour-hand" id="hour-hand"></div>
@@ -580,9 +458,9 @@
       <div class="app-topbar">
         <button class="back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> Home</button>
         <span class="app-title">Wikipedia</span>
-        <div style="width:26px"></div>
+        <div class="topbar-spacer"></div>
       </div>
-      <div class="app-content" style="display:flex;flex-direction:column;padding:14px;gap:10px;overflow-y:auto;">
+      <div class="app-content app-content-wiki">
         <div class="wiki-search-bar">
           <input class="wiki-input" id="wiki-input" placeholder="Search Wikipedia..."
             onkeydown="if(event.key==='Enter')wikiSearch()">
@@ -597,10 +475,10 @@
       <div class="app-topbar">
         <button class="back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> Home</button>
         <span class="app-title" id="external-title">App</span>
-        <div style="width:26px"></div>
+        <div class="topbar-spacer"></div>
       </div>
-      <div class="app-content" style="overflow:hidden;position:relative;flex:1;">
-        <div class="iframe-overlay" style="position:absolute;inset:0;overflow:hidden;">
+      <div class="app-content app-content-ext">
+        <div class="iframe-overlay">
           <div class="iframe-logo" id="iframe-logo"></div>
           <div class="iframe-app-name" id="iframe-app-name"></div>
           <div class="iframe-msg" id="iframe-msg"></div>
@@ -608,6 +486,193 @@
         </div>
       </div>
     </div>
+
+    <!-- ══ FACEBOOK ══ -->
+    <div class="view" id="facebook-screen">
+
+      <!-- FB FEED -->
+      <div class="fb-subview active" id="fb-home">
+        <!-- FB Top Nav -->
+        <div class="fb-topnav">
+          <div class="fb-logo">facebook</div>
+          <div class="fb-topnav-icons">
+            <div class="fb-nav-icon" id="fb-search-btn"><i class="fas fa-search"></i></div>
+            <div class="fb-nav-icon"><i class="fas fa-bell"></i><span class="fb-badge">3</span></div>
+            <div class="fb-nav-icon"><i class="fas fa-comment-dots"></i><span class="fb-badge">5</span></div>
+          </div>
+        </div>
+        <!-- FB Bottom Nav -->
+        <div class="fb-botnav">
+          <div class="fb-btn active"><i class="fas fa-home"></i></div>
+          <div class="fb-btn"><i class="fas fa-user-friends"></i></div>
+          <div class="fb-btn fb-watch-wrapper">
+            <div class="fb-watch-btn"><i class="fas fa-play"></i></div>
+          </div>
+          <div class="fb-btn"><i class="fas fa-store"></i></div>
+          <div class="fb-btn"><i class="fas fa-bars"></i></div>
+          <div class="fb-back-home" onclick="goHome()"><i class="fas fa-times"></i></div>
+        </div>
+        <!-- Feed -->
+        <div class="fb-feed" id="fb-feed">
+
+          <!-- Create Post Box -->
+          <div class="fb-card fb-create-post">
+            <div class="fb-create-row">
+              <div class="fb-avatar-sm">👤</div>
+              <div class="fb-create-input" id="fb-post-input-area" onclick="fbOpenPostModal()">What's on your mind?</div>
+            </div>
+            <div class="fb-create-divider"></div>
+            <div class="fb-create-actions">
+              <button class="fb-create-action" onclick="fbOpenPostModal()">
+                <i class="fas fa-video fb-icon-live"></i> Live
+              </button>
+              <button class="fb-create-action" id="fb-photo-btn" onclick="fbOpenPhotoUpload()">
+                <i class="fas fa-image fb-icon-photo"></i> Photo
+              </button>
+              <button class="fb-create-action" onclick="fbOpenPostModal()">
+                <i class="fas fa-smile fb-icon-feeling"></i> Feeling
+              </button>
+            </div>
+          </div>
+
+          <!-- Stories -->
+          <div class="fb-card fb-card-padded">
+            <div class="fb-stories-row">
+              <div class="fb-story fb-story-add">
+                <div class="fb-story-img">+</div>
+                <div class="fb-story-name">Add Story</div>
+              </div>
+              <div class="fb-story">
+                <div class="fb-story-img fb-story-purple">👩</div>
+                <div class="fb-story-name">Maria</div>
+              </div>
+              <div class="fb-story">
+                <div class="fb-story-img fb-story-blue">👨</div>
+                <div class="fb-story-name">Juan</div>
+              </div>
+              <div class="fb-story">
+                <div class="fb-story-img fb-story-pink">👧</div>
+                <div class="fb-story-name">Ana</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Post 1 -->
+          <div class="fb-card fb-post">
+            <div class="fb-post-header">
+              <div class="fb-avatar">👩</div>
+              <div class="fb-post-meta">
+                <div class="fb-post-name">Maria Santos</div>
+                <div class="fb-post-time"><i class="fas fa-globe-asia"></i> 2 hrs ago · Public</div>
+              </div>
+              <div class="fb-post-more"><i class="fas fa-ellipsis-h"></i></div>
+            </div>
+            <div class="fb-post-text">Enjoying the beautiful sunset at Rizal Park today! 🌅 #Manila #Sunset</div>
+            <div class="fb-post-img-placeholder fb-img-sunset">
+              <span class="fb-post-emoji">🌅</span>
+            </div>
+            <div class="fb-post-stats">
+              <span>👍 ❤️ 142</span>
+              <span>28 comments · 5 shares</span>
+            </div>
+            <div class="fb-post-divider"></div>
+            <div class="fb-post-actions">
+              <button class="fb-action-btn"><i class="fas fa-thumbs-up"></i> Like</button>
+              <button class="fb-action-btn"><i class="fas fa-comment"></i> Comment</button>
+              <button class="fb-action-btn"><i class="fas fa-share"></i> Share</button>
+            </div>
+          </div>
+
+          <!-- Post 2 -->
+          <div class="fb-card fb-post">
+            <div class="fb-post-header">
+              <div class="fb-avatar">👨</div>
+              <div class="fb-post-meta">
+                <div class="fb-post-name">Juan Dela Cruz</div>
+                <div class="fb-post-time"><i class="fas fa-globe-asia"></i> 5 hrs ago · Public</div>
+              </div>
+              <div class="fb-post-more"><i class="fas fa-ellipsis-h"></i></div>
+            </div>
+            <div class="fb-post-text">Merienda time with the family! 🍜🍗 Nothing beats home-cooked meals. #PinoyFood #Family</div>
+            <div class="fb-post-img-placeholder fb-img-purple">
+              <span class="fb-post-emoji">🍜</span>
+            </div>
+            <div class="fb-post-stats">
+              <span>👍 😍 87</span>
+              <span>14 comments</span>
+            </div>
+            <div class="fb-post-divider"></div>
+            <div class="fb-post-actions">
+              <button class="fb-action-btn"><i class="fas fa-thumbs-up"></i> Like</button>
+              <button class="fb-action-btn"><i class="fas fa-comment"></i> Comment</button>
+              <button class="fb-action-btn"><i class="fas fa-share"></i> Share</button>
+            </div>
+          </div>
+
+        </div><!-- /fb-feed -->
+      </div><!-- /fb-home -->
+
+      <!-- PHOTO UPLOAD — Step 1: Gallery -->
+      <div class="fb-subview" id="fb-photo-step1">
+        <div class="fb-flow-header">
+          <button class="fb-flow-back" onclick="fbBack('fb-home')"><i class="fas fa-chevron-left"></i></button>
+          <span class="fb-flow-title">Select Photo</span>
+          <button class="fb-flow-next" id="fb-next-btn-1" onclick="fbGoStep2()" disabled>Next</button>
+        </div>
+        <div class="fb-gallery" id="fb-gallery">
+          <div class="fb-gallery-item" id="fb-gal-0" onclick="fbSelectPhoto(0)">🌅</div>
+          <div class="fb-gallery-item" id="fb-gal-1" onclick="fbSelectPhoto(1)">🏖️</div>
+          <div class="fb-gallery-item" id="fb-gal-2" onclick="fbSelectPhoto(2)">🌸</div>
+          <div class="fb-gallery-item" id="fb-gal-3" onclick="fbSelectPhoto(3)">🎉</div>
+          <div class="fb-gallery-item" id="fb-gal-4" onclick="fbSelectPhoto(4)">🌃</div>
+          <div class="fb-gallery-item" id="fb-gal-5" onclick="fbSelectPhoto(5)">🍕</div>
+          <div class="fb-gallery-item" id="fb-gal-6" onclick="fbSelectPhoto(6)">🐶</div>
+          <div class="fb-gallery-item" id="fb-gal-7" onclick="fbSelectPhoto(7)">🎵</div>
+          <div class="fb-gallery-item" id="fb-gal-8" onclick="fbSelectPhoto(8)">🌿</div>
+        </div>
+      </div>
+
+      <!-- PHOTO UPLOAD — Step 2: Caption -->
+      <div class="fb-subview" id="fb-photo-step2">
+        <div class="fb-flow-header">
+          <button class="fb-flow-back" onclick="fbBack('fb-photo-step1')"><i class="fas fa-chevron-left"></i></button>
+          <span class="fb-flow-title">New Post</span>
+          <button class="fb-post-btn" id="fb-post-btn" onclick="fbGoSuccess()">POST</button>
+        </div>
+        <div class="fb-caption-area">
+          <div class="fb-caption-user">
+            <div class="fb-avatar-sm">👤</div>
+            <div>
+              <div class="fb-caption-username">You</div>
+              <div class="fb-privacy-pill"><i class="fas fa-globe-asia"></i> Public <i class="fas fa-caret-down"></i></div>
+            </div>
+          </div>
+          <textarea class="fb-caption-input" id="fb-caption-input" placeholder="Say something about this photo..."></textarea>
+          <div class="fb-selected-preview" id="fb-selected-preview"></div>
+        </div>
+        <div class="fb-caption-tools">
+          <div class="fb-caption-tool"><i class="fas fa-user-tag fb-icon-live"></i> Tag People</div>
+          <div class="fb-caption-tool"><i class="fas fa-map-marker-alt fb-icon-photo"></i> Check In</div>
+          <div class="fb-caption-tool"><i class="fas fa-smile fb-icon-feeling"></i> Feeling</div>
+        </div>
+      </div>
+
+      <!-- PHOTO UPLOAD — Success -->
+      <div class="fb-subview" id="fb-photo-success">
+        <div class="fb-flow-header fb-flow-header-center">
+          <span class="fb-flow-title">Post Shared!</span>
+        </div>
+        <div class="fb-success">
+          <div class="fb-success-icon">✅</div>
+          <h2>Your photo is live!</h2>
+          <p>Your post has been shared with your friends.</p>
+          <div class="fb-success-preview" id="fb-success-preview"></div>
+          <button class="fb-back-feed-btn" onclick="fbShowSub('fb-home')">Back to Feed</button>
+          <button class="fb-back-feed-btn ghost" onclick="goHome()">Go to Home</button>
+        </div>
+      </div>
+
+    </div><!-- /#facebook-screen -->
 
     <!-- HOME BAR -->
     <div class="home-indicator" onclick="stopGuide();goHome();"></div>

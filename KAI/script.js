@@ -105,7 +105,6 @@ function goHome() {
 const appConfig = {
   google:  { title:'Google',  logo:'🌐', url:'https://google.com',         msg:'Search the web with Google' },
   youtube: { title:'YouTube', logo:'▶️', url:'https://youtube.com',        msg:'Watch videos on YouTube' },
-  facebook:{ title:'Facebook',logo:'📘', url:'https://facebook.com',       msg:'Connect with Facebook' },
   maps:    { title:'Maps',    logo:'🗺️', url:'https://maps.google.com',    msg:'Explore the world with Google Maps' },
 };
 function openApp(name) {
@@ -114,6 +113,7 @@ function openApp(name) {
   if (name === 'clock')      { showView('clock-screen'); startClock(); return; }
   if (name === 'wikipedia')  { showView('wiki-screen'); return; }
   if (name === 'gcash')      { showView('gcash-screen'); gcashShowSub('gcash-home'); return; }
+  if (name === 'facebook')   { showView('facebook-screen'); fbShowSub('fb-home'); return; }
   const cfg = appConfig[name]; if (!cfg) return;
   externalUrl = cfg.url;
   document.getElementById('external-title').textContent   = cfg.title;
@@ -216,6 +216,106 @@ function updatePinDots() {
 }
 
 /* ═══════════════════════════════════
+   FACEBOOK
+═══════════════════════════════════ */
+let fbSelectedPhoto = null;
+const fbPhotoEmojis = ['🌅','🏖️','🌸','🎉','🌃','🍕','🐶','🎵','🌿'];
+
+function fbShowSub(id) {
+  document.querySelectorAll('.fb-subview').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function fbBack(to) { fbShowSub(to); }
+
+function fbOpenPhotoUpload() {
+  fbSelectedPhoto = null;
+  document.querySelectorAll('.fb-gallery-item').forEach(i => i.classList.remove('selected'));
+  document.getElementById('fb-next-btn-1').disabled = true;
+  fbShowSub('fb-photo-step1');
+  if (guideActive) setTimeout(renderGuideStep, 250);
+}
+
+function fbSelectPhoto(idx) {
+  fbSelectedPhoto = idx;
+  document.querySelectorAll('.fb-gallery-item').forEach((el,i) => {
+    el.classList.toggle('selected', i === idx);
+  });
+  document.getElementById('fb-next-btn-1').disabled = false;
+  if (guideActive) setTimeout(renderGuideStep, 250);
+}
+
+function fbGoStep2() {
+  if (fbSelectedPhoto === null) return;
+  const emoji = fbPhotoEmojis[fbSelectedPhoto];
+  document.getElementById('fb-selected-preview').textContent = emoji;
+  document.getElementById('fb-caption-input').value = '';
+  fbShowSub('fb-photo-step2');
+  if (guideActive) setTimeout(renderGuideStep, 250);
+}
+
+function fbGoSuccess() {
+  const emoji = fbPhotoEmojis[fbSelectedPhoto ?? 0];
+  document.getElementById('fb-success-preview').textContent = emoji;
+  fbShowSub('fb-photo-success');
+  speak("Your photo has been posted! It's now live on Facebook.");
+  showToast("📸 Photo posted successfully!");
+  stopGuide();
+}
+
+function fbOpenPostModal() { showToast("✏️ Post composer coming soon!"); }
+
+/* ── Upload Photo Guide Flow ── */
+const uploadPhotoFlow = [
+  {
+    targetId: 'fb-app-icon',
+    viewId:   'home-screen',
+    message:  "First, find the Facebook app on your home screen and tap it to open it.",
+    tapToAdvance: true,
+    onTap() { openApp('facebook'); },
+  },
+  {
+    targetId: 'fb-photo-btn',
+    viewId:   'facebook-screen',
+    subviewId:'fb-home',
+    message:  "Facebook is open! Now tap the 📷 Photo button in the 'What's on your mind?' box to start uploading.",
+    tapToAdvance: true,
+    onTap() { fbOpenPhotoUpload(); },
+  },
+  {
+    targetId: 'fb-gallery',
+    viewId:   'facebook-screen',
+    subviewId:'fb-photo-step1',
+    message:  "Choose a photo from your gallery by tapping on it. A blue border will appear around the selected photo.",
+    tapToAdvance: false,
+    okLabel:  "I selected a photo →",
+  },
+  {
+    targetId: 'fb-next-btn-1',
+    viewId:   'facebook-screen',
+    subviewId:'fb-photo-step1',
+    message:  "Great choice! Now tap 'Next' to continue to the caption screen.",
+    tapToAdvance: true,
+    onTap() { fbGoStep2(); },
+  },
+  {
+    targetId: 'fb-caption-input',
+    viewId:   'facebook-screen',
+    subviewId:'fb-photo-step2',
+    message:  "You can type a caption for your photo here — describe what's happening or add a fun message! This step is optional.",
+    tapToAdvance: false,
+    okLabel:  "I added a caption →",
+  },
+  {
+    targetId: 'fb-post-btn',
+    viewId:   'facebook-screen',
+    subviewId:'fb-photo-step2',
+    message:  "Everything looks good! Tap the blue POST button to share your photo with your friends.",
+    tapToAdvance: true,
+    onTap() { fbGoSuccess(); },
+  },
+];
+
+/* ═══════════════════════════════════
    KAI GUIDED NAVIGATION SYSTEM
 ═══════════════════════════════════ */
 const sendMoneyFlow = [
@@ -296,7 +396,10 @@ function renderGuideStep() {
   const step = currentFlow[guideStepIndex];
 
   if (step.viewId && currentApp !== step.viewId) showView(step.viewId);
-  if (step.subviewId) gcashShowSub(step.subviewId);
+  if (step.subviewId) {
+    if (step.viewId === 'facebook-screen') fbShowSub(step.subviewId);
+    else gcashShowSub(step.subviewId);
+  }
 
   setTimeout(() => positionGuideOn(step), 160);
 }
@@ -479,7 +582,7 @@ function setListening(v) {
 function setKaiStatus(s) {
   const el = document.getElementById('kai-subtitle');
   if (el) el.textContent = (s === 'READY')
-    ? 'Try saying: "Help me send money"' : s;
+    ? 'Try: "Help me send money" or "Upload a photo"' : s;
 }
 function setKaiTranscript(t) { document.getElementById('kai-transcript').textContent = t; }
 
@@ -502,12 +605,21 @@ function takeCommand(msg) {
       startGuide(sendMoneyFlow);
     });
   }
+  else if (msg.includes('upload') || msg.includes('post a photo') ||
+           msg.includes('post photo') || msg.includes('mag upload') ||
+           msg.includes('how do i upload') || msg.includes('share a photo')) {
+    respond("Sure! I'll guide you step by step on how to upload a photo on Facebook. Follow the yellow highlights!", () => {
+      startGuide(uploadPhotoFlow);
+    });
+  }
+  else if (msg.includes('facebook') || msg.includes('open facebook')) {
+    respond("Opening Facebook!", () => openApp('facebook'));
+  }
   else if (msg.includes('gcash') || msg.includes('open gcash')) {
     respond("Opening GCash. Say help me send money to get guided step by step!", () => openApp('gcash'));
   }
   else if (msg.includes('open google'))   respond("Opening Google.",     () => openApp('google'));
   else if (msg.includes('open youtube'))  respond("Opening YouTube.",    () => openApp('youtube'));
-  else if (msg.includes('open facebook')) respond("Opening Facebook.",   () => openApp('facebook'));
   else if (msg.includes('calculator'))    respond("Opening Calculator.", () => openApp('calculator'));
   else if (msg.includes('open clock'))    respond("Opening Clock.",      () => openApp('clock'));
   else if (msg.includes('wikipedia')) {
