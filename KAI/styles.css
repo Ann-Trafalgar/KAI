@@ -1605,6 +1605,7 @@ body::before {
   border-radius: 14px; overflow: hidden;
   border: 1.5px solid rgba(238,77,45,.4);
   box-shadow: 0 4px 16px rgba(238,77,45,.15);
+  flex-shrink: 0; /* prevent flexbox from squashing banner to 0 height */
 }
 .sp-kai-banner-head {
   display: flex; align-items: center; gap: 8px;

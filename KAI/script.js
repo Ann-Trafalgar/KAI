@@ -357,6 +357,19 @@ function spSearchCategory(cat) {
   spDoSearch();
 }
 
+// Called by guide steps 3 & 4 to guarantee the search has run and banner is visible
+function spEnsureSearchAndBanner() {
+  const q = (document.getElementById('sp-search-input').value || '').trim();
+  if (!q) return;
+  // Re-run search unconditionally so banner is always fresh and visible
+  spDoSearch();
+  // Belt-and-suspenders: explicitly show banner if spKaiRec was set
+  const banner = document.getElementById('sp-kai-banner');
+  if (banner && spKaiRec && kaiSettings.strictness) {
+    banner.style.display = 'block';
+  }
+}
+
 function spDoSearch() {
   const q = (document.getElementById('sp-search-input').value || '').trim().toLowerCase();
   if (!q) return;
@@ -400,7 +413,6 @@ function spDoSearch() {
     ? results.map(p => spCardHTML(p, kaiSettings.strictness && spKaiRec && p.id === spKaiRec.id)).join('')
     : '<div style="text-align:center;padding:30px;color:#999;font-family:Inter,sans-serif;font-size:12px">No results found</div>';
   spShowSub('sp-results');
-  if (guideActive) setTimeout(renderGuideStep, 300);
 }
 
 function spOpenProduct(id) {
@@ -495,6 +507,10 @@ const shopGuideBasic = [
     message:  "Type the product you're looking for in the search bar, then press Enter.",
     tapToAdvance: false,
     okLabel:  "I searched →",
+    onOk() {
+      const q = (document.getElementById('sp-search-input').value || '').trim();
+      if (q) spDoSearch();
+    },
   },
   {
     targetId: 'sp-results-grid',
@@ -522,6 +538,10 @@ const shopGuideStrict = [
     message:  "Type the product you want in the search bar and press Enter. I'll scan all results and find the best one for you!",
     tapToAdvance: false,
     okLabel:  "I searched →",
+    onOk() {
+      const q = (document.getElementById('sp-search-input').value || '').trim();
+      if (q) spDoSearch();
+    },
   },
   {
     targetId: 'sp-results-header',
@@ -531,7 +551,8 @@ const shopGuideStrict = [
     tapToAdvance: false,
     okLabel:  "Show me →",
     onShow() {
-      // Ensure results are scrolled to top so banner is visible
+      // Guarantee the search has run and banner is populated
+      spEnsureSearchAndBanner();
       const el = document.getElementById('sp-results');
       if (el) el.scrollTop = 0;
     },
@@ -543,6 +564,8 @@ const shopGuideStrict = [
     message:  "This is my top pick! Tap it to see the full details — price, reviews, and description.",
     tapToAdvance: true,
     onShow() {
+      // Guarantee the search has run and banner is populated
+      spEnsureSearchAndBanner();
       const el = document.getElementById('sp-results');
       if (el) el.scrollTop = 0;
     },
@@ -1035,8 +1058,6 @@ function renderGuideStep() {
   if (!guideActive || !currentFlow) return;
   const step = currentFlow[guideStepIndex];
 
-  // Increment token — any pending positionGuideOn/drawGuide from a previous render call
-  // will see a stale token and bail out, preventing race conditions
   guideRenderToken = (guideRenderToken || 0) + 1;
   const myToken = guideRenderToken;
 
@@ -1045,6 +1066,14 @@ function renderGuideStep() {
     if (step.viewId === 'facebook-screen') fbShowSub(step.subviewId);
     else if (step.viewId === 'shopee-screen') spShowSub(step.subviewId);
     else gcashShowSub(step.subviewId);
+  }
+
+  // For the KAI banner step: make the banner visible NOW before any delays
+  // so the browser has maximum time to reflow before we try to measure dimensions.
+  if (step.targetId === 'sp-kai-banner') {
+    spEnsureSearchAndBanner();
+    const resultsEl = document.getElementById('sp-results');
+    if (resultsEl) resultsEl.scrollTop = 0;
   }
 
   setTimeout(() => { if (guideRenderToken === myToken) positionGuideOn(step, myToken); }, 160);
@@ -1068,19 +1097,32 @@ function positionGuideOn(step, token) {
   // Call onShow before positioning (scrolls to top etc.)
   if (step.onShow) step.onShow();
 
-  // For the KAI banner: wait until it actually has rendered dimensions before drawing
+  // For the KAI banner: ensure it's visible, then poll until it has real dimensions
   if (step.targetId === 'sp-kai-banner') {
     const waitForBanner = (triesLeft) => {
       if (guideRenderToken !== token) return;
       const el = document.getElementById('sp-kai-banner');
+      const resultsEl = document.getElementById('sp-results');
+      if (resultsEl) resultsEl.scrollTop = 0;
+      // Force banner visible on every retry
+      if (el) el.style.display = 'block';
       const r = el ? el.getBoundingClientRect() : null;
       if (r && r.width > 10 && r.height > 10) {
         _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn, token);
       } else if (triesLeft > 0) {
-        setTimeout(() => waitForBanner(triesLeft - 1), 120);
+        setTimeout(() => waitForBanner(triesLeft - 1), 150);
+      } else {
+        // Final attempt: re-run search, force visible, then draw
+        spEnsureSearchAndBanner();
+        if (el) el.style.display = 'block';
+        if (resultsEl) resultsEl.scrollTop = 0;
+        setTimeout(() => {
+          if (guideRenderToken !== token) return;
+          _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn, token);
+        }, 300);
       }
     };
-    setTimeout(() => waitForBanner(8), 200);
+    setTimeout(() => waitForBanner(12), 300);
     return;
   }
 
@@ -1230,6 +1272,15 @@ function _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHint
 
 function guideNextManual() {
   if (!guideActive) return;
+  const step = currentFlow[guideStepIndex];
+  if (step && step.onOk) {
+    step.onOk();
+    guideStepIndex++;
+    if (guideStepIndex >= currentFlow.length) { stopGuide(); return; }
+    // Give the DOM a moment to reflect any changes from onOk before rendering
+    setTimeout(renderGuideStep, 200);
+    return;
+  }
   guideStepIndex++;
   if (guideStepIndex >= currentFlow.length) { stopGuide(); return; }
   renderGuideStep();
