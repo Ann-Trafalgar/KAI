@@ -1395,9 +1395,9 @@ function toggleChildLock() {
 }
 
 const langHints = {
-  english: 'Try: "Send money" · "Upload a photo" · "React to a post"',
-  taglish:  'Subukan: "Magpadala ng pera" · "Mag-upload ng photo"',
-  tagalog:  'Subukan: "Magpadala ng pera" · "Ibahagi ang post"',
+  english: 'Hello! How may I help you?',
+  taglish:  'Hello! How may I help you?',
+  tagalog:  'Hello! How may I help you?',
 };
 
 function setLanguage(lang) {
