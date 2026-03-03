@@ -10,6 +10,7 @@ let qrPinVal = '';
 let guideActive = false;
 let guideStepIndex = 0;
 let currentFlow = null;
+let guideRenderToken = 0;
 let pendingTapHandler = null;
 
 // KAI Settings state
@@ -67,10 +68,11 @@ function pad(n) { return n.toString().padStart(2,'0'); }
 /* ═══════════════════════════════════
    SPEECH
 ═══════════════════════════════════ */
-function speak(text) {
+function speak(text, onEnd) {
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 0.93; u.pitch = 1; u.volume = 1;
+  if (onEnd) u.onend = onEnd;
   window.speechSynthesis.speak(u);
 }
 function wishMe() {
@@ -230,21 +232,72 @@ function updatePinDots() {
 
 // Product catalog — each has: id, name, emoji, price, rating, sold, desc, category
 const spProducts = [
-  { id:'s1',  name:'Samsung Galaxy A15 4G',          emoji:'📱', price:6990,  rating:4.8, sold:12400, desc:'6.5" display, 50MP camera, 5000mAh battery. Perfect everyday smartphone.', cat:'Phones' },
-  { id:'s2',  name:'Xiaomi Redmi 13C',                emoji:'📱', price:4999,  rating:4.6, sold:9800,  desc:'6.74" display, 50MP AI triple camera. Best budget phone.', cat:'Phones' },
-  { id:'s3',  name:'realme C55',                      emoji:'📱', price:7299,  rating:4.7, sold:7200,  desc:'108MP camera, 5000mAh, 33W fast charging. For content creators.', cat:'Phones' },
-  { id:'s4',  name:'Oversized Graphic Tee',           emoji:'👕', price:199,   rating:4.5, sold:32000, desc:'100% cotton, unisex fit. Available in 8 colors.', cat:'Fashion' },
-  { id:'s5',  name:'Korean Skincare Set (6pcs)',       emoji:'🧴', price:599,   rating:4.9, sold:28000, desc:'Cleanser, toner, serum, moisturizer, eye cream, sunscreen.', cat:'Beauty' },
-  { id:'s6',  name:'Lucky Me Pancit Canton 6-pack',   emoji:'🍜', price:89,    rating:4.8, sold:95000, desc:'Original flavor. Fast cook. Kids and adults love it!', cat:'Food' },
-  { id:'s7',  name:'Stuffed Bear Plushie 40cm',       emoji:'🧸', price:299,   rating:4.7, sold:18000, desc:'Super soft. Great gift for all ages. Machine washable.', cat:'Toys' },
-  { id:'s8',  name:'JBL GO 3 Portable Speaker',       emoji:'🔊', price:1499,  rating:4.7, sold:14500, desc:'Waterproof, bold JBL sound, 5h battery. Clip anywhere.', cat:'Electronics' },
-  { id:'s9',  name:'Wireless Earbuds TWS',            emoji:'🎧', price:399,   rating:4.4, sold:41000, desc:'Bluetooth 5.0, 4h playback + 12h charging case. Clear sound.', cat:'Electronics' },
-  { id:'s10', name:'Nike Dri-FIT Running Shorts',     emoji:'🩳', price:899,   rating:4.6, sold:8700,  desc:'Lightweight, sweat-wicking. Built-in liner. Sizes S-XXL.', cat:'Fashion' },
-  { id:'s11', name:'Collagen Whitening Soap 3-pack',  emoji:'🧼', price:149,   rating:4.7, sold:67000, desc:'Papaya + kojic acid. Visible results in 2 weeks.', cat:'Beauty' },
-  { id:'s12', name:'Stick-on Phone Wallet',           emoji:'💳', price:79,    rating:4.3, sold:22000, desc:'Holds 3 cards + cash. Strong adhesive. Works with MagSafe.', cat:'Accessories' },
-  { id:'s13', name:'Mechanical Keyboard RGB',         emoji:'⌨️', price:1299,  rating:4.6, sold:5400,  desc:'Blue switches, TKL layout, USB-C. Perfect for gaming.', cat:'Electronics' },
-  { id:'s14', name:'Reusable Water Bottle 1L',        emoji:'🍶', price:249,   rating:4.8, sold:31000, desc:'Stainless steel, keeps cold 24h / hot 12h. BPA-free.', cat:'Kitchen' },
-  { id:'s15', name:'Wireless Mouse Ergonomic',        emoji:'🖱️', price:599,   rating:4.5, sold:9300,  desc:'2.4GHz, silent click, 1600 DPI. Long 12-month battery.', cat:'Electronics' },
+  // Phones
+  { id:'s1',  name:'Samsung Galaxy A15 4G',             emoji:'📱', price:6990,  rating:4.8, sold:12400, desc:'6.5" display, 50MP camera, 5000mAh battery. Perfect everyday smartphone.', cat:'Phones' },
+  { id:'s2',  name:'Xiaomi Redmi 13C',                  emoji:'📱', price:4999,  rating:4.6, sold:9800,  desc:'6.74" display, 50MP AI triple camera. Best budget phone.', cat:'Phones' },
+  { id:'s3',  name:'realme C55',                        emoji:'📱', price:7299,  rating:4.7, sold:7200,  desc:'108MP camera, 5000mAh, 33W fast charging. For content creators.', cat:'Phones' },
+  { id:'sp4', name:'OPPO A78 5G',                       emoji:'📱', price:8999,  rating:4.5, sold:6100,  desc:'6.56" display, 50MP AI camera, 5000mAh. Blazing 5G speeds.', cat:'Phones' },
+  { id:'sp5', name:'vivo Y16',                          emoji:'📱', price:5499,  rating:4.4, sold:8300,  desc:'6.51" display, 13MP camera, 5000mAh. Slim & lightweight design.', cat:'Phones' },
+  { id:'sp6', name:'iPhone 11 64GB (Refurbished)',       emoji:'📱', price:14999, rating:4.6, sold:4200,  desc:'A13 Bionic chip, dual 12MP cameras, Face ID. Certified refurbished.', cat:'Phones' },
+  { id:'sp7', name:'Tecno Spark 20C',                   emoji:'📱', price:3999,  rating:4.3, sold:11200, desc:'6.56" HD+ display, 16MP camera. Best entry-level pick.', cat:'Phones' },
+  // Fashion
+  { id:'s4',  name:'Oversized Graphic Tee',             emoji:'👕', price:199,   rating:4.5, sold:32000, desc:'100% cotton, unisex fit. Available in 8 colors.', cat:'Fashion' },
+  { id:'s10', name:'Nike Dri-FIT Running Shorts',       emoji:'🩳', price:899,   rating:4.6, sold:8700,  desc:'Lightweight, sweat-wicking. Built-in liner. Sizes S-XXL.', cat:'Fashion' },
+  { id:'sf3', name:'Palazzo Wide-Leg Pants',            emoji:'👖', price:349,   rating:4.7, sold:21000, desc:'High-waist flowy fit. Chic & comfortable for daily wear.', cat:'Fashion' },
+  { id:'sf4', name:'Bucket Hat UV Protection',          emoji:'🧢', price:159,   rating:4.6, sold:15800, desc:'UPF50+ protection. Packable & washable. 6 colors.', cat:'Fashion' },
+  { id:'sf5', name:'Ribbed Crop Tank Top',              emoji:'👚', price:149,   rating:4.4, sold:27500, desc:'Stretchy rib fabric. Pairs with everything. S-2XL.', cat:'Fashion' },
+  { id:'sf6', name:'Korean-Style Sneakers',             emoji:'👟', price:799,   rating:4.7, sold:13200, desc:'Lightweight sole, breathable mesh upper. Unisex sizing.', cat:'Fashion' },
+  { id:'sf7', name:'Linen Button-Down Shirt',           emoji:'👔', price:459,   rating:4.5, sold:9400,  desc:'Breathable linen blend. Perfect for humid PH weather.', cat:'Fashion' },
+  // Beauty
+  { id:'s5',  name:'Korean Skincare Set (6pcs)',         emoji:'🧴', price:599,   rating:4.9, sold:28000, desc:'Cleanser, toner, serum, moisturizer, eye cream, sunscreen.', cat:'Beauty' },
+  { id:'s11', name:'Collagen Whitening Soap 3-pack',    emoji:'🧼', price:149,   rating:4.7, sold:67000, desc:'Papaya + kojic acid. Visible results in 2 weeks.', cat:'Beauty' },
+  { id:'sb3', name:'Hyaluronic Acid Serum 30ml',        emoji:'💧', price:299,   rating:4.8, sold:34000, desc:'Deeply hydrating, plumps skin. All skin types. Fragrance-free.', cat:'Beauty' },
+  { id:'sb4', name:'Sunscreen SPF50 PA++++ 50ml',       emoji:'🌞', price:249,   rating:4.8, sold:41000, desc:'Lightweight, non-greasy finish. Daily UV protection.', cat:'Beauty' },
+  { id:'sb5', name:'Maybelline Fit Me Foundation',      emoji:'💄', price:399,   rating:4.6, sold:19500, desc:'Natural finish. 40 shades. Dermatologist-tested.', cat:'Beauty' },
+  { id:'sb6', name:'Retinol Anti-Aging Night Cream',    emoji:'🌙', price:449,   rating:4.7, sold:12300, desc:'Reduces fine lines overnight. With Vitamin E & C.', cat:'Beauty' },
+  { id:'sb7', name:'Hair Repair Mask 300ml',            emoji:'💆', price:199,   rating:4.5, sold:23000, desc:'Keratin-infused deep conditioner. Frizz-free in 1 use.', cat:'Beauty' },
+  // Food
+  { id:'s6',  name:'Lucky Me Pancit Canton 6-pack',     emoji:'🍜', price:89,    rating:4.8, sold:95000, desc:'Original flavor. Fast cook. Kids and adults love it!', cat:'Food' },
+  { id:'sfd2',name:'Nescafe 3-in-1 Coffee 30s',         emoji:'☕', price:189,   rating:4.8, sold:78000, desc:'Rich creamy coffee. Perfect for busy mornings. Resealable pack.', cat:'Food' },
+  { id:'sfd3',name:'Oishi Prawn Crackers 6-pack',       emoji:'🦐', price:149,   rating:4.7, sold:52000, desc:'Crispy, light snack. 6 big bags. Party favorite!', cat:'Food' },
+  { id:'sfd4',name:'Monde Mamon 10pcs',                 emoji:'🧁', price:99,    rating:4.6, sold:43000, desc:'Soft fluffy sponge cake. A classic Filipino snack.', cat:'Food' },
+  { id:'sfd5',name:'Virgin Coconut Oil 500ml',          emoji:'🥥', price:199,   rating:4.7, sold:31000, desc:'Cold-pressed, unrefined. For cooking, hair & skin.', cat:'Food' },
+  { id:'sfd6',name:'Apple Cider Vinegar 750ml',         emoji:'🍎', price:249,   rating:4.5, sold:17000, desc:'With mother. Raw & unfiltered. Supports digestion.', cat:'Food' },
+  // Toys
+  { id:'s7',  name:'Stuffed Bear Plushie 40cm',         emoji:'🧸', price:299,   rating:4.7, sold:18000, desc:'Super soft. Great gift for all ages. Machine washable.', cat:'Toys' },
+  { id:'st2', name:'LEGO Classic Bricks Set 484pcs',    emoji:'🧩', price:1299,  rating:4.9, sold:8700,  desc:'484 classic LEGO bricks in 33 colors. Ages 4+. Creative play.', cat:'Toys' },
+  { id:'st3', name:'Remote Control Car 1:18 Scale',     emoji:'🚗', price:699,   rating:4.6, sold:11200, desc:'2.4GHz, 20km/h top speed, rechargeable. Kids & adults.', cat:'Toys' },
+  { id:'st4', name:'Magnetic Drawing Board',            emoji:'✏️', price:249,   rating:4.8, sold:24000, desc:'Colorful doodle board. No mess, no ink. Perfect for toddlers.', cat:'Toys' },
+  { id:'st5', name:'Kinetic Sand 1kg Set',              emoji:'🏖️', price:399,   rating:4.7, sold:9300,  desc:'Moldable sensory sand. 3 colors + tools. Non-toxic.', cat:'Toys' },
+  { id:'st6', name:'Bubble Gun Auto Blower',            emoji:'🫧', price:199,   rating:4.5, sold:19800, desc:'Shoots 500+ bubbles/min. Battery-operated. Kids 3+.', cat:'Toys' },
+  // Electronics
+  { id:'s8',  name:'JBL GO 3 Portable Speaker',         emoji:'🔊', price:1499,  rating:4.7, sold:14500, desc:'Waterproof, bold JBL sound, 5h battery. Clip anywhere.', cat:'Electronics' },
+  { id:'s9',  name:'Wireless Earbuds TWS',              emoji:'🎧', price:399,   rating:4.4, sold:41000, desc:'Bluetooth 5.0, 4h playback + 12h charging case. Clear sound.', cat:'Electronics' },
+  { id:'s13', name:'Mechanical Keyboard RGB',           emoji:'⌨️', price:1299,  rating:4.6, sold:5400,  desc:'Blue switches, TKL layout, USB-C. Perfect for gaming.', cat:'Electronics' },
+  { id:'s15', name:'Wireless Mouse Ergonomic',          emoji:'🖱️', price:599,   rating:4.5, sold:9300,  desc:'2.4GHz, silent click, 1600 DPI. Long 12-month battery.', cat:'Electronics' },
+  { id:'se5', name:'65W USB-C GaN Charger',             emoji:'🔌', price:499,   rating:4.8, sold:22000, desc:'Charges laptop + phone simultaneously. Foldable plug.', cat:'Electronics' },
+  { id:'se6', name:'10000mAh Power Bank Slim',          emoji:'🔋', price:699,   rating:4.7, sold:37000, desc:'22.5W fast charge, dual USB + USB-C. Airline-approved.', cat:'Electronics' },
+  { id:'se7', name:'Ring Light 10" with Stand',         emoji:'💡', price:899,   rating:4.6, sold:16800, desc:'3 light modes, 10 brightness levels. Perfect for streaming.', cat:'Electronics' },
+  { id:'se8', name:'Webcam 1080p Full HD',              emoji:'📷', price:799,   rating:4.5, sold:8900,  desc:'Auto-focus, built-in mic, plug & play. WFH essential.', cat:'Electronics' },
+  { id:'se9', name:'Bluetooth Speaker 360° Waterproof', emoji:'🔊', price:849,   rating:4.6, sold:12100, desc:'360° surround sound, 12h battery, IPX7 waterproof.', cat:'Electronics' },
+  { id:'se10',name:'Smart LED Bulb RGB WiFi',           emoji:'💡', price:299,   rating:4.5, sold:28500, desc:'16M colors, voice & app control. Works with Alexa & Google.', cat:'Electronics' },
+  // Mouse-specific
+  { id:'sm1', name:'Logitech M185 Wireless Mouse',      emoji:'🖱️', price:749,   rating:4.7, sold:18600, desc:'1000 DPI, 12-month battery, reliable 2.4GHz nano receiver.', cat:'Electronics' },
+  { id:'sm2', name:'Gaming Mouse RGB 6400 DPI',         emoji:'🖱️', price:499,   rating:4.5, sold:14200, desc:'7 programmable buttons, RGB lighting, braided cable.', cat:'Electronics' },
+  { id:'sm3', name:'Mouse Pad XL Desk Mat 80x30cm',     emoji:'🖱️', price:249,   rating:4.8, sold:31000, desc:'Stitched edges, smooth surface, non-slip rubber base.', cat:'Electronics' },
+  { id:'sm4', name:'Vertical Ergonomic Mouse',          emoji:'🖱️', price:699,   rating:4.6, sold:7800,  desc:'Natural hand posture, reduces wrist strain. 800-1600 DPI.', cat:'Electronics' },
+  // Accessories
+  { id:'s12', name:'Stick-on Phone Wallet',             emoji:'💳', price:79,    rating:4.3, sold:22000, desc:'Holds 3 cards + cash. Strong adhesive. Works with MagSafe.', cat:'Accessories' },
+  { id:'sa2', name:'Tempered Glass Screen Protector',   emoji:'📲', price:59,    rating:4.6, sold:48000, desc:'9H hardness, full cover, anti-fingerprint. Fits all models.', cat:'Accessories' },
+  { id:'sa3', name:'Braided Charging Cable 1.2m',       emoji:'🔌', price:129,   rating:4.7, sold:61000, desc:'USB-C & Lightning. Fast charge, tangle-free nylon braid.', cat:'Accessories' },
+  { id:'sa4', name:'Phone Stand Adjustable Desktop',    emoji:'📱', price:199,   rating:4.6, sold:17300, desc:'360° rotation, foldable, compatible with all phone sizes.', cat:'Accessories' },
+  { id:'sa5', name:'Laptop Sleeve 14" Waterproof',      emoji:'💼', price:349,   rating:4.7, sold:9800,  desc:'Slim neoprene, shock-absorbing. Fits MacBook & Lenovo.', cat:'Accessories' },
+  // Kitchen
+  { id:'s14', name:'Reusable Water Bottle 1L',          emoji:'🍶', price:249,   rating:4.8, sold:31000, desc:'Stainless steel, keeps cold 24h / hot 12h. BPA-free.', cat:'Kitchen' },
+  { id:'sk2', name:'Air Fryer 3.5L Digital',            emoji:'🍳', price:2499,  rating:4.7, sold:6700,  desc:'8 preset modes, rapid air technology. 360° even heat.', cat:'Kitchen' },
+  { id:'sk3', name:'Non-Stick Frying Pan 28cm',         emoji:'🍳', price:599,   rating:4.6, sold:21000, desc:'PFOA-free coating, induction compatible, soft-grip handle.', cat:'Kitchen' },
+  { id:'sk4', name:'Electric Kettle 1.7L SS',           emoji:'☕', price:699,   rating:4.8, sold:14200, desc:'Fast boil 1500W, auto shut-off, keep warm function.', cat:'Kitchen' },
+  { id:'sk5', name:'Meal Prep Containers 10-set',       emoji:'🥗', price:399,   rating:4.7, sold:25000, desc:'BPA-free, leak-proof, microwave & dishwasher safe.', cat:'Kitchen' },
 ];
 
 let spCurrentProduct = null;
@@ -466,31 +519,40 @@ const shopGuideStrict = [
     targetId: 'sp-search-input',
     viewId:   'shopee-screen',
     subviewId: 'sp-home',
-    message:  "Type the product you want in the search bar and press Enter. I'll analyze the results for you!",
+    message:  "Type the product you want in the search bar and press Enter. I'll scan all results and find the best one for you!",
     tapToAdvance: false,
     okLabel:  "I searched →",
+  },
+  {
+    targetId: 'sp-results-header',
+    viewId:   'shopee-screen',
+    subviewId: 'sp-results',
+    message:  "I analyzed every result and ranked them by rating and sales. My top pick is shown in the dark banner — scroll up to see it!",
+    tapToAdvance: false,
+    okLabel:  "Show me →",
+    onShow() {
+      // Ensure results are scrolled to top so banner is visible
+      const el = document.getElementById('sp-results');
+      if (el) el.scrollTop = 0;
+    },
   },
   {
     targetId: 'sp-kai-banner',
     viewId:   'shopee-screen',
     subviewId: 'sp-results',
-    message:  "I analyzed all the results and picked the BEST product — based on the highest combination of rating and sales volume. Check my recommendation above!",
-    tapToAdvance: false,
-    okLabel:  "Show me →",
-  },
-  {
-    targetId: 'sp-kai-rec-card',
-    viewId:   'shopee-screen',
-    subviewId: 'sp-results',
-    message:  "This is my top pick! Tap it to see full details — price, reviews, and description.",
+    message:  "This is my top pick! Tap it to see the full details — price, reviews, and description.",
     tapToAdvance: true,
+    onShow() {
+      const el = document.getElementById('sp-results');
+      if (el) el.scrollTop = 0;
+    },
     onTap() { if (spKaiRec) spOpenProduct(spKaiRec.id); },
   },
   {
     targetId: 'sp-add-cart-btn',
     viewId:   'shopee-screen',
     subviewId: 'sp-product',
-    message:  "You're on the product page. Review the details, and if you're happy, tap 'Add to Cart'!",
+    message:  "You're on the product page! Review the details, and when you're ready, tap 'Add to Cart'.",
     tapToAdvance: true,
     onTap() { spAddToCart(); },
   },
@@ -973,18 +1035,24 @@ function renderGuideStep() {
   if (!guideActive || !currentFlow) return;
   const step = currentFlow[guideStepIndex];
 
+  // Increment token — any pending positionGuideOn/drawGuide from a previous render call
+  // will see a stale token and bail out, preventing race conditions
+  guideRenderToken = (guideRenderToken || 0) + 1;
+  const myToken = guideRenderToken;
+
   if (step.viewId && currentApp !== step.viewId) showView(step.viewId);
   if (step.subviewId) {
     if (step.viewId === 'facebook-screen') fbShowSub(step.subviewId);
     else if (step.viewId === 'shopee-screen') spShowSub(step.subviewId);
     else gcashShowSub(step.subviewId);
   }
-  if (step.onShow) setTimeout(step.onShow, 200);
 
-  setTimeout(() => positionGuideOn(step), 160);
+  setTimeout(() => { if (guideRenderToken === myToken) positionGuideOn(step, myToken); }, 160);
 }
 
-function positionGuideOn(step) {
+function positionGuideOn(step, token) {
+  if (!guideActive || guideRenderToken !== token) return;
+
   const overlay    = document.getElementById('kai-guide-overlay');
   const ring       = document.getElementById('kai-guide-ring');
   const bubble     = document.getElementById('kai-guide-bubble');
@@ -997,23 +1065,42 @@ function positionGuideOn(step) {
   const target = document.getElementById(step.targetId);
   if (!target) return;
 
-  // Scroll the target into the top quarter of its scrollable container
-  // so the bubble can sit below it without covering it or the content above
-  const scrollParent = target.closest('.gcash-flow-body, .gcash-body, .fb-feed, .app-content, .fb-caption-area');
+  // Call onShow before positioning (scrolls to top etc.)
+  if (step.onShow) step.onShow();
+
+  // For the KAI banner: wait until it actually has rendered dimensions before drawing
+  if (step.targetId === 'sp-kai-banner') {
+    const waitForBanner = (triesLeft) => {
+      if (guideRenderToken !== token) return;
+      const el = document.getElementById('sp-kai-banner');
+      const r = el ? el.getBoundingClientRect() : null;
+      if (r && r.width > 10 && r.height > 10) {
+        _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn, token);
+      } else if (triesLeft > 0) {
+        setTimeout(() => waitForBanner(triesLeft - 1), 120);
+      }
+    };
+    setTimeout(() => waitForBanner(8), 200);
+    return;
+  }
+
+  const scrollParent = target.closest('.gcash-flow-body, .gcash-body, .fb-feed, .app-content, .fb-caption-area, #sp-results, .sp-home-content');
   if (scrollParent) {
     const parentRect = scrollParent.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     const offsetInsideParent = targetRect.top - parentRect.top + scrollParent.scrollTop;
-    // Put the target near 30% from the top of the container
     const desiredScroll = offsetInsideParent - (scrollParent.clientHeight * 0.25);
     scrollParent.scrollTo({ top: Math.max(0, desiredScroll), behavior: 'smooth' });
   }
 
-  // Wait for scroll to settle before measuring positions
-  setTimeout(() => _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn), 320);
+  setTimeout(() => {
+    if (guideRenderToken !== token) return;
+    _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn, token);
+  }, 320);
 }
 
-function _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn) {
+function _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn, token) {
+  if (!guideActive || (token !== undefined && guideRenderToken !== token)) return;
   const target = document.getElementById(step.targetId);
   if (!target) return;
 
@@ -1027,6 +1114,7 @@ function _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHint
   const rh = tRect.height;
   const pad = 7;
 
+  // Clamp ring to stay within phone screen bounds
   ring.style.cssText = `
     left:${rx - pad}px; top:${ry - pad}px;
     width:${rw + pad*2}px; height:${rh + pad*2}px;
@@ -1206,9 +1294,9 @@ function toggleStrictness() {
   kaiSettings.strictness = !kaiSettings.strictness;
   renderSettingsState();
   const msg = kaiSettings.strictness
-    ? "Intervention Strictness is ON. When you shop, I'll recommend the best product based on ratings and sales."
-    : "Intervention Strictness is OFF. I'll guide you through tasks without extra suggestions.";
-  showToast(kaiSettings.strictness ? '🧠 Strictness ON' : '🧠 Strictness OFF');
+    ? "Smart Suggestions is ON. When you shop, I'll recommend the best product based on ratings and sales."
+    : "Smart Suggestions is OFF. I'll guide you through tasks without extra suggestions.";
+  showToast(kaiSettings.strictness ? '💡 Smart Suggestions ON' : '💡 Smart Suggestions OFF');
   speak(msg);
 }
 
@@ -1227,15 +1315,15 @@ function renderSettingsState() {
     info?.classList.remove('active');
   }
 
-  // Strictness toggle
+  // Smart Suggestions toggle
   const stToggle = document.getElementById('strictness-toggle');
   const stDesc   = document.getElementById('strictness-desc');
   if (kaiSettings.strictness) {
     stToggle?.classList.add('on');
-    if (stDesc) stDesc.textContent = 'KAI actively suggests best products';
+    if (stDesc) stDesc.textContent = 'KAI picks the best product for you';
   } else {
     stToggle?.classList.remove('on');
-    if (stDesc) stDesc.textContent = 'KAI only guides, no suggestions';
+    if (stDesc) stDesc.textContent = 'KAI guides without extra suggestions';
   }
 
   // Language buttons
@@ -1276,10 +1364,12 @@ function updateLangPreview() {} // no-op, preview removed
 function takeCommand(msg) {
   setKaiStatus('PROCESSING...');
   const respond = (text, action) => {
-    speak(text); setKaiStatus('RESPONDING');
-    setKaiTranscript(text); showToast('🤖 ' + text);
-    if (action) setTimeout(action, 650);
-    setTimeout(() => setKaiStatus('READY'), 3500);
+    setKaiStatus('RESPONDING');
+    setKaiTranscript(text);
+    showToast('🤖 ' + text);
+    // Fire action only after speech synthesis actually finishes — no guessing needed
+    speak(text, action ? () => { action(); setTimeout(() => setKaiStatus('READY'), 400); } : null);
+    if (!action) setTimeout(() => setKaiStatus('READY'), 3500);
   };
 
   const lang = kaiSettings.language; // 'english' | 'taglish' | 'tagalog'
