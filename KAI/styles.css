@@ -57,6 +57,8 @@ body::before {
   position:absolute; top:16px; left:12px; right:12px; bottom:16px;
   border-radius:30px; overflow:hidden; background:#040d14;
   transform:translateZ(0); -webkit-transform:translateZ(0); isolation:isolate;
+  clip-path: inset(0 0 0 0 round 30px);
+  contain: strict;
 }
 
 /* Notch + Status */
@@ -226,7 +228,8 @@ body::before {
 /* ═══════════════════════════════════════════
    KAI SCREEN
 ═══════════════════════════════════════════ */
-#kai-screen { background:#000; display:flex; flex-direction:column; }
+#kai-screen { background:#000; }
+#kai-screen.active { display:flex; flex-direction:column; }
 .kai-topbar {
   height:44px; margin-top:36px; display:flex; align-items:center;
   padding:0 14px; flex-shrink:0; z-index:10;
@@ -1220,3 +1223,446 @@ body::before {
   pointer-events: none;
 }
 .fb-share-success.show { opacity: 1; transform: translateY(0); }
+
+/* ═══════════════════════════════════════════
+   KAI — SETTINGS BUTTON
+═══════════════════════════════════════════ */
+.kai-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kai-settings-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(150,150,150,0.3);
+  border-radius: 50%;
+  width: 38px; height: 38px;
+  color: rgba(255,255,255,0.7);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.kai-settings-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-color: rgba(200,200,200,0.5);
+  transform: rotate(30deg);
+}
+.kai-settings-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 3px;
+  flex: 1;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════
+   KAI — SETTINGS SCREEN
+═══════════════════════════════════════════ */
+#kai-settings-screen {
+  background: #000;
+}
+.kai-settings-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 30px;
+}
+
+.kai-settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.kai-settings-body::-webkit-scrollbar { width: 2px; }
+.kai-settings-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+/* Header */
+.kai-settings-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 4px 4px;
+}
+.kai-settings-avatar {
+  width: 52px; height: 52px; border-radius: 16px;
+  background: linear-gradient(135deg,#1a1a1a,#3a3a3a);
+  border: 1px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 0 20px rgba(255,255,255,0.08);
+}
+.kai-settings-name {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 18px; font-weight: 900;
+  color: #fff; letter-spacing: 6px;
+  text-shadow: 0 0 20px rgba(255,255,255,0.4);
+}
+.kai-settings-desc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; color: rgba(255,255,255,0.4);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* Section labels */
+.kai-settings-section { display: flex; flex-direction: column; gap: 8px; }
+.kai-settings-section-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 3px; text-transform: uppercase;
+  padding: 0 2px;
+  display: flex; align-items: center; gap: 6px;
+}
+.kai-settings-section-label i { font-size: 10px; }
+
+/* Card */
+.kai-settings-card {
+  background: linear-gradient(145deg, #111, #1a1a1a);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Row */
+.kai-settings-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+}
+.kai-settings-row-icon {
+  width: 38px; height: 38px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 15px; flex-shrink: 0;
+}
+.kai-settings-row-info { flex: 1; }
+.kai-settings-row-title {
+  font-size: 13px; font-weight: 700; color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+.kai-settings-row-desc {
+  font-size: 10px; color: rgba(255,255,255,0.4);
+  font-family: 'Inter', sans-serif; margin-top: 2px;
+}
+
+.kai-settings-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 0 16px;
+}
+
+/* Toggle switch */
+.kai-toggle {
+  width: 46px; height: 26px; border-radius: 13px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.15);
+  position: relative; cursor: pointer;
+  transition: background .25s, border-color .25s;
+  flex-shrink: 0;
+}
+.kai-toggle.on {
+  background: linear-gradient(135deg, #e17055, #d63031);
+  border-color: rgba(209,48,49,0.5);
+  box-shadow: 0 0 12px rgba(209,48,49,0.3);
+}
+.kai-toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  transition: transform .25s cubic-bezier(.4,0,.2,1), background .25s;
+}
+.kai-toggle.on .kai-toggle-thumb {
+  transform: translateX(20px);
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Child lock info box */
+.kai-childlock-info {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 16px 14px;
+  font-size: 11px; color: rgba(255,255,255,0.35);
+  font-family: 'Inter', sans-serif; line-height: 1.5;
+}
+.kai-childlock-info i { color: rgba(255,255,255,0.25); font-size: 13px; margin-top: 1px; flex-shrink: 0; }
+.kai-childlock-info.active { color: rgba(225,112,85,0.8); }
+.kai-childlock-info.active i { color: rgba(225,112,85,0.6); }
+
+/* Language options */
+.kai-lang-options {
+  display: flex; flex-direction: column; gap: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.kai-lang-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: none; border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer; transition: background .15s; width: 100%;
+  text-align: left;
+}
+.kai-lang-btn:last-child { border-bottom: none; }
+.kai-lang-btn:active { background: rgba(255,255,255,0.05); }
+.kai-lang-flag { font-size: 18px; flex-shrink: 0; }
+.kai-lang-name {
+  flex: 1; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  font-family: 'Inter', sans-serif;
+}
+.kai-lang-check { color: rgba(255,255,255,0.15); font-size: 12px; }
+.kai-lang-btn.active .kai-lang-name { color: #fff; font-weight: 700; }
+.kai-lang-btn.active .kai-lang-check { color: rgba(0,229,255,0.9); }
+
+/* Language preview */
+.kai-lang-preview {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px 14px;
+  font-size: 11px; color: rgba(0,229,255,0.6);
+  font-family: 'Share Tech Mono', monospace;
+  font-style: italic; letter-spacing: 0.3px;
+}
+.kai-lang-preview i { font-size: 12px; flex-shrink: 0; }
+
+/* Coming soon badge */
+.kai-coming-soon-badge {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 3px 8px;
+  font-size: 8px; font-weight: 800;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 1.5px;
+}
+
+/* Strictness placeholder */
+.kai-strictness-placeholder {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 16px 14px;
+  font-size: 11px; color: rgba(255,255,255,0.25);
+  font-family: 'Inter', sans-serif; line-height: 1.5;
+}
+.kai-strictness-placeholder i { color: rgba(255,255,255,0.15); font-size: 13px; margin-top: 1px; flex-shrink: 0; }
+
+/* Version footer */
+.kai-settings-version {
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; color: rgba(255,255,255,0.15);
+  letter-spacing: 2px; padding: 4px 0 8px;
+}
+
+/* ── Language option two-line layout ── */
+.kai-lang-btn { align-items: flex-start; padding: 13px 16px; }
+.kai-lang-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+.kai-lang-example {
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.3px;
+}
+.kai-lang-btn.active .kai-lang-example { color: rgba(0,229,255,0.5); }
+
+/* ── "KAI replies in English" note ── */
+.kai-lang-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.kai-lang-note i { color: rgba(0,229,255,0.4); font-size: 12px; margin-top: 1px; flex-shrink: 0; }
+.kai-lang-note strong { color: rgba(255,255,255,0.6); }
+
+/* ═══════════════════════════════════════════
+   SHOPEE APP ICON
+═══════════════════════════════════════════ */
+.ai-shopee {
+  background: linear-gradient(135deg, #ee4d2d, #ff7337) !important;
+  font-size: 22px;
+}
+
+/* ═══════════════════════════════════════════
+   SHOPEE SCREEN
+═══════════════════════════════════════════ */
+#shopee-screen { background: #f5f5f5; }
+#shopee-screen.active { display: flex; flex-direction: column; }
+
+/* subviews */
+.sp-subview { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.sp-subview.active { display: flex; }
+
+/* Top bar */
+.sp-topbar {
+  background: #ee4d2d;
+  display: flex; align-items: center; gap: 8px;
+  padding: 36px 10px 10px;
+  flex-shrink: 0;
+}
+.sp-topbar .back-btn {
+  background: none; border: none; color: #fff;
+  font-size: 16px; padding: 4px; cursor: pointer;
+  flex-shrink: 0;
+}
+.sp-search-wrap {
+  flex: 1; background: #fff; border-radius: 20px;
+  display: flex; align-items: center; padding: 0 10px; gap: 6px;
+  height: 34px;
+}
+.sp-search-icon { color: #ee4d2d; font-size: 12px; }
+.sp-search-input {
+  flex: 1; border: none; outline: none; font-size: 12px;
+  font-family: 'Inter', sans-serif; color: #333; background: transparent;
+}
+.sp-cart-btn {
+  background: none; border: none; color: #fff;
+  font-size: 18px; cursor: pointer; position: relative; flex-shrink: 0; padding: 4px;
+}
+.sp-cart-badge {
+  position: absolute; top: -2px; right: -4px;
+  background: #ffeb3b; color: #333; font-size: 8px; font-weight: 800;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Home feed ── */
+.sp-home-content { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+.sp-banner {
+  background: linear-gradient(135deg, #ee4d2d, #ff9a5c);
+  margin: 10px; border-radius: 12px; padding: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sp-banner-tag { background: rgba(255,255,255,.25); color: #fff; font-size: 9px; font-weight: 800; border-radius: 20px; padding: 3px 8px; display: inline-block; margin-bottom: 6px; font-family: 'Inter', sans-serif; }
+.sp-banner-title { font-size: 20px; font-weight: 900; color: #fff; font-family: 'Inter', sans-serif; }
+.sp-banner-sub { font-size: 10px; color: rgba(255,255,255,.85); margin-top: 4px; font-family: 'Inter', sans-serif; }
+.sp-banner-emoji { font-size: 48px; }
+
+.sp-cats-row { display: flex; gap: 6px; padding: 6px 10px; overflow-x: auto; }
+.sp-cats-row::-webkit-scrollbar { display: none; }
+.sp-cat { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 52px; cursor: pointer; }
+.sp-cat-icon { width: 44px; height: 44px; background: #fff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.sp-cat-name { font-size: 9px; color: #555; font-family: 'Inter', sans-serif; text-align: center; }
+
+.sp-section-title { font-size: 13px; font-weight: 800; color: #333; padding: 12px 12px 6px; font-family: 'Inter', sans-serif; }
+
+.sp-flash-row { display: flex; gap: 8px; padding: 0 10px 10px; overflow-x: auto; }
+.sp-flash-row::-webkit-scrollbar { display: none; }
+.sp-flash-item { background: #fff; border-radius: 10px; padding: 10px; min-width: 100px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.06); text-align: center; flex-shrink: 0; }
+.sp-flash-emoji { font-size: 28px; }
+.sp-flash-name { font-size: 9px; color: #333; margin-top: 4px; font-family: 'Inter', sans-serif; font-weight: 600; }
+.sp-flash-price { font-size: 11px; color: #ee4d2d; font-weight: 800; font-family: 'Inter', sans-serif; }
+.sp-flash-off { font-size: 9px; background: #ee4d2d; color: #fff; border-radius: 3px; padding: 1px 4px; font-family: 'Inter', sans-serif; font-weight: 800; display: inline-block; margin-top: 2px; }
+
+/* ── Product grid ── */
+.sp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 10px 10px; }
+.sp-card {
+  background: #fff; border-radius: 10px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06); cursor: pointer;
+  transition: transform .15s;
+}
+.sp-card:active { transform: scale(.97); }
+.sp-card-img { height: 100px; display: flex; align-items: center; justify-content: center; font-size: 44px; background: #fafafa; }
+.sp-card-body { padding: 8px; }
+.sp-card-name { font-size: 11px; color: #333; font-family: 'Inter', sans-serif; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sp-card-price { font-size: 13px; color: #ee4d2d; font-weight: 800; font-family: 'Inter', sans-serif; margin-top: 4px; }
+.sp-card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 3px; }
+.sp-card-rating { font-size: 9px; color: #f8a100; font-family: 'Inter', sans-serif; }
+.sp-card-sold { font-size: 9px; color: #999; font-family: 'Inter', sans-serif; }
+.sp-card.kai-top { border: 2px solid #ee4d2d; position: relative; }
+.sp-card.kai-top::before { content: '🤖 KAI PICK'; position: absolute; top: 4px; left: 4px; background: #ee4d2d; color: #fff; font-size: 7px; font-weight: 800; border-radius: 4px; padding: 2px 5px; font-family: 'Inter', sans-serif; z-index: 2; }
+
+/* ── Results header ── */
+.sp-results-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 6px; background: #fff; border-bottom: 1px solid #eee; flex-shrink: 0; }
+.sp-results-label { font-size: 11px; color: #666; font-family: 'Inter', sans-serif; }
+.sp-results-label strong { color: #ee4d2d; }
+.sp-results-count { font-size: 10px; color: #999; font-family: 'Inter', sans-serif; }
+
+/* ── KAI Recommendation banner ── */
+.sp-kai-banner {
+  margin: 10px 10px 0;
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  border-radius: 14px; overflow: hidden;
+  border: 1.5px solid rgba(238,77,45,.4);
+  box-shadow: 0 4px 16px rgba(238,77,45,.15);
+}
+.sp-kai-banner-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px 8px;
+  background: linear-gradient(90deg, rgba(238,77,45,.15), transparent);
+}
+.sp-kai-banner-icon { font-size: 16px; }
+.sp-kai-banner-title { font-size: 12px; font-weight: 800; color: #fff; font-family: 'Inter', sans-serif; flex: 1; }
+.sp-kai-banner-badge { background: #ee4d2d; color: #fff; font-size: 8px; font-weight: 800; border-radius: 20px; padding: 2px 7px; font-family: 'Share Tech Mono', monospace; letter-spacing: 1px; }
+.sp-kai-rec-card { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; }
+.sp-kai-rec-card:active { background: rgba(255,255,255,.05); }
+.sp-kai-rec-emoji { font-size: 36px; flex-shrink: 0; background: #111; width: 56px; height: 56px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.sp-kai-rec-info { flex: 1; }
+.sp-kai-rec-name { font-size: 11px; font-weight: 700; color: #fff; font-family: 'Inter', sans-serif; }
+.sp-kai-rec-price { font-size: 14px; font-weight: 900; color: #ee4d2d; font-family: 'Inter', sans-serif; margin-top: 2px; }
+.sp-kai-rec-row { display: flex; gap: 8px; margin-top: 4px; align-items: center; }
+.sp-kai-rec-stars { font-size: 10px; color: #f8a100; }
+.sp-kai-rec-sold { font-size: 9px; color: rgba(255,255,255,.5); font-family: 'Inter', sans-serif; }
+.sp-kai-reason { padding: 6px 12px 10px; font-size: 10px; color: rgba(255,255,255,.5); font-family: 'Inter', sans-serif; font-style: italic; }
+
+/* results grid scrollable */
+#sp-results { overflow-y: auto; }
+#sp-results .sp-grid { margin-top: 8px; }
+
+/* ── Product detail ── */
+.sp-product-scroll { flex: 1; overflow-y: auto; position: relative; }
+.sp-product-back {
+  position: absolute; top: 10px; left: 10px; z-index: 10;
+  background: rgba(255,255,255,.85); border: none; border-radius: 50%;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; cursor: pointer; backdrop-filter: blur(8px); color: #333;
+}
+.sp-product-img { height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 80px; }
+.sp-product-info { padding: 14px; }
+.sp-product-name { font-size: 14px; font-weight: 700; color: #333; font-family: 'Inter', sans-serif; line-height: 1.4; }
+.sp-product-meta-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.sp-product-rating { font-size: 11px; color: #f8a100; font-family: 'Inter', sans-serif; }
+.sp-product-sold { font-size: 11px; color: #999; font-family: 'Inter', sans-serif; }
+.sp-product-price { font-size: 22px; font-weight: 900; color: #ee4d2d; font-family: 'Inter', sans-serif; }
+.sp-product-shipping { font-size: 10px; color: #27ae60; margin-top: 6px; font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 5px; }
+.sp-product-divider { height: 1px; background: #eee; margin: 12px 0; }
+.sp-product-desc { font-size: 11px; color: #666; font-family: 'Inter', sans-serif; line-height: 1.6; }
+.sp-product-footer { background: #fff; border-top: 1px solid #eee; padding: 10px 14px; display: flex; gap: 8px; flex-shrink: 0; }
+.sp-add-cart-btn { flex: 1; background: #fff; border: 2px solid #ee4d2d; color: #ee4d2d; border-radius: 20px; font-size: 12px; font-weight: 800; font-family: 'Inter', sans-serif; cursor: pointer; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.sp-buy-btn { flex: 1; background: #ee4d2d; border: none; color: #fff; border-radius: 20px; font-size: 12px; font-weight: 800; font-family: 'Inter', sans-serif; cursor: pointer; padding: 10px; }
+
+/* ── Cart ── */
+.sp-cart-header { background: #ee4d2d; padding: 36px 12px 12px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.sp-cart-title { font-size: 15px; font-weight: 800; color: #fff; font-family: 'Inter', sans-serif; }
+.sp-cart-items { flex: 1; overflow-y: auto; padding: 10px; }
+.sp-cart-item { background: #fff; border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+.sp-cart-item-emoji { font-size: 32px; flex-shrink: 0; }
+.sp-cart-item-info { flex: 1; }
+.sp-cart-item-name { font-size: 11px; font-weight: 700; color: #333; font-family: 'Inter', sans-serif; }
+.sp-cart-item-price { font-size: 13px; font-weight: 800; color: #ee4d2d; font-family: 'Inter', sans-serif; margin-top: 2px; }
+.sp-cart-footer { background: #fff; border-top: 1px solid #eee; padding: 12px 14px; flex-shrink: 0; }
+.sp-cart-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px; font-family: 'Inter', sans-serif; color: #333; }
+.sp-cart-total { font-size: 18px; font-weight: 900; color: #ee4d2d; }
+.sp-checkout-btn { width: 100%; background: #ee4d2d; border: none; color: #fff; border-radius: 20px; padding: 12px; font-size: 13px; font-weight: 800; font-family: 'Inter', sans-serif; cursor: pointer; }
+.sp-empty-cart { text-align: center; padding: 40px 20px; color: #999; font-family: 'Inter', sans-serif; font-size: 13px; }
+.sp-empty-cart-emoji { font-size: 48px; display: block; margin-bottom: 10px; }

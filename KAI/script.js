@@ -12,6 +12,13 @@ let guideStepIndex = 0;
 let currentFlow = null;
 let pendingTapHandler = null;
 
+// KAI Settings state
+let kaiSettings = {
+  childLock: false,
+  language: 'english',
+  strictness: false,
+};
+
 /* ═══════════════════════════════════
    INIT
 ═══════════════════════════════════ */
@@ -115,6 +122,7 @@ function openApp(name) {
   if (name === 'wikipedia')  { showView('wiki-screen'); return; }
   if (name === 'gcash')      { showView('gcash-screen'); gcashShowSub('gcash-home'); return; }
   if (name === 'facebook')   { showView('facebook-screen'); fbShowSub('fb-home'); return; }
+  if (name === 'shopee')     { showView('shopee-screen'); spShowSub('sp-home'); spBuildHome(); return; }
   const cfg = appConfig[name]; if (!cfg) return;
   externalUrl = cfg.url;
   document.getElementById('external-title').textContent   = cfg.title;
@@ -215,6 +223,278 @@ function updatePinDots() {
   for (let i=0; i<4; i++)
     document.getElementById('pd'+i).classList.toggle('filled', i < pinVal.length);
 }
+
+/* ═══════════════════════════════════
+   SHOPEE
+═══════════════════════════════════ */
+
+// Product catalog — each has: id, name, emoji, price, rating, sold, desc, category
+const spProducts = [
+  { id:'s1',  name:'Samsung Galaxy A15 4G',          emoji:'📱', price:6990,  rating:4.8, sold:12400, desc:'6.5" display, 50MP camera, 5000mAh battery. Perfect everyday smartphone.', cat:'Phones' },
+  { id:'s2',  name:'Xiaomi Redmi 13C',                emoji:'📱', price:4999,  rating:4.6, sold:9800,  desc:'6.74" display, 50MP AI triple camera. Best budget phone.', cat:'Phones' },
+  { id:'s3',  name:'realme C55',                      emoji:'📱', price:7299,  rating:4.7, sold:7200,  desc:'108MP camera, 5000mAh, 33W fast charging. For content creators.', cat:'Phones' },
+  { id:'s4',  name:'Oversized Graphic Tee',           emoji:'👕', price:199,   rating:4.5, sold:32000, desc:'100% cotton, unisex fit. Available in 8 colors.', cat:'Fashion' },
+  { id:'s5',  name:'Korean Skincare Set (6pcs)',       emoji:'🧴', price:599,   rating:4.9, sold:28000, desc:'Cleanser, toner, serum, moisturizer, eye cream, sunscreen.', cat:'Beauty' },
+  { id:'s6',  name:'Lucky Me Pancit Canton 6-pack',   emoji:'🍜', price:89,    rating:4.8, sold:95000, desc:'Original flavor. Fast cook. Kids and adults love it!', cat:'Food' },
+  { id:'s7',  name:'Stuffed Bear Plushie 40cm',       emoji:'🧸', price:299,   rating:4.7, sold:18000, desc:'Super soft. Great gift for all ages. Machine washable.', cat:'Toys' },
+  { id:'s8',  name:'JBL GO 3 Portable Speaker',       emoji:'🔊', price:1499,  rating:4.7, sold:14500, desc:'Waterproof, bold JBL sound, 5h battery. Clip anywhere.', cat:'Electronics' },
+  { id:'s9',  name:'Wireless Earbuds TWS',            emoji:'🎧', price:399,   rating:4.4, sold:41000, desc:'Bluetooth 5.0, 4h playback + 12h charging case. Clear sound.', cat:'Electronics' },
+  { id:'s10', name:'Nike Dri-FIT Running Shorts',     emoji:'🩳', price:899,   rating:4.6, sold:8700,  desc:'Lightweight, sweat-wicking. Built-in liner. Sizes S-XXL.', cat:'Fashion' },
+  { id:'s11', name:'Collagen Whitening Soap 3-pack',  emoji:'🧼', price:149,   rating:4.7, sold:67000, desc:'Papaya + kojic acid. Visible results in 2 weeks.', cat:'Beauty' },
+  { id:'s12', name:'Stick-on Phone Wallet',           emoji:'💳', price:79,    rating:4.3, sold:22000, desc:'Holds 3 cards + cash. Strong adhesive. Works with MagSafe.', cat:'Accessories' },
+  { id:'s13', name:'Mechanical Keyboard RGB',         emoji:'⌨️', price:1299,  rating:4.6, sold:5400,  desc:'Blue switches, TKL layout, USB-C. Perfect for gaming.', cat:'Electronics' },
+  { id:'s14', name:'Reusable Water Bottle 1L',        emoji:'🍶', price:249,   rating:4.8, sold:31000, desc:'Stainless steel, keeps cold 24h / hot 12h. BPA-free.', cat:'Kitchen' },
+  { id:'s15', name:'Wireless Mouse Ergonomic',        emoji:'🖱️', price:599,   rating:4.5, sold:9300,  desc:'2.4GHz, silent click, 1600 DPI. Long 12-month battery.', cat:'Electronics' },
+];
+
+let spCurrentProduct = null;
+let spCart = [];
+let spLastSearch = '';
+let spKaiRec = null; // the KAI-recommended product for current search
+
+function spShowSub(id) {
+  document.querySelectorAll('.sp-subview').forEach(v => v.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+
+function spBuildHome() {
+  // Flash deals — top 5 by discount simulation
+  const flash = [
+    { name:'Earbuds', emoji:'🎧', price:'₱399', orig:'₱799', off:'50%' },
+    { name:'Tote Bag', emoji:'👜', price:'₱99', orig:'₱299', off:'67%' },
+    { name:'Facemask', emoji:'😷', price:'₱49', orig:'₱150', off:'67%' },
+    { name:'Notebook', emoji:'📓', price:'₱39', orig:'₱89', off:'56%' },
+    { name:'Sneakers', emoji:'👟', price:'₱499', orig:'₱1299', off:'62%' },
+  ];
+  const row = document.getElementById('sp-flash-row');
+  if (row && !row.innerHTML) {
+    row.innerHTML = flash.map(f => `
+      <div class="sp-flash-item">
+        <div class="sp-flash-emoji">${f.emoji}</div>
+        <div class="sp-flash-name">${f.name}</div>
+        <div class="sp-flash-price">${f.price}</div>
+        <div class="sp-flash-off">${f.off} OFF</div>
+      </div>`).join('');
+  }
+  const grid = document.getElementById('sp-home-grid');
+  if (grid && !grid.innerHTML) {
+    const picks = [...spProducts].sort(() => Math.random() - 0.5).slice(0, 6);
+    grid.innerHTML = picks.map(p => spCardHTML(p)).join('');
+  }
+}
+
+function spCardHTML(p, isKaiPick = false) {
+  const stars = '★'.repeat(Math.floor(p.rating)) + (p.rating % 1 >= 0.5 ? '½' : '');
+  const soldStr = p.sold >= 1000 ? (p.sold/1000).toFixed(0)+'k' : p.sold;
+  return `<div class="sp-card${isKaiPick ? ' kai-top' : ''}" onclick="spOpenProduct('${p.id}')">
+    <div class="sp-card-img">${p.emoji}</div>
+    <div class="sp-card-body">
+      <div class="sp-card-name">${p.name}</div>
+      <div class="sp-card-price">₱${p.price.toLocaleString()}</div>
+      <div class="sp-card-meta">
+        <div class="sp-card-rating">★ ${p.rating}</div>
+        <div class="sp-card-sold">${soldStr} sold</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function spSearchCategory(cat) {
+  document.getElementById('sp-search-input').value = cat;
+  spDoSearch();
+}
+
+function spDoSearch() {
+  const q = (document.getElementById('sp-search-input').value || '').trim().toLowerCase();
+  if (!q) return;
+  spLastSearch = q;
+  const results = spProducts.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.cat.toLowerCase().includes(q) ||
+    p.desc.toLowerCase().includes(q)
+  );
+  document.getElementById('sp-results-keyword').textContent = document.getElementById('sp-search-input').value;
+  document.getElementById('sp-results-count').textContent = results.length + ' items';
+  const grid = document.getElementById('sp-results-grid');
+
+  // KAI recommendation — best by (rating * 0.4 + normalised sold * 0.6)
+  const banner = document.getElementById('sp-kai-banner');
+  if (kaiSettings.strictness && results.length > 0) {
+    const maxSold = Math.max(...results.map(r => r.sold));
+    const scored = results.map(r => ({ ...r, score: r.rating * 0.4 + (r.sold / maxSold) * 0.6 }));
+    spKaiRec = scored.sort((a, b) => b.score - a.score)[0];
+
+    document.getElementById('sp-kai-rec-card').innerHTML = `
+      <div class="sp-kai-rec-emoji">${spKaiRec.emoji}</div>
+      <div class="sp-kai-rec-info">
+        <div class="sp-kai-rec-name">${spKaiRec.name}</div>
+        <div class="sp-kai-rec-price">₱${spKaiRec.price.toLocaleString()}</div>
+        <div class="sp-kai-rec-row">
+          <span class="sp-kai-rec-stars">★ ${spKaiRec.rating}</span>
+          <span class="sp-kai-rec-sold">${spKaiRec.sold.toLocaleString()} sold</span>
+        </div>
+      </div>
+      <i class="fas fa-chevron-right" style="color:rgba(255,255,255,.3);font-size:12px"></i>`;
+    document.getElementById('sp-kai-reason').textContent =
+      `Chosen because it has the highest combination of rating (${spKaiRec.rating}★) and sales (${spKaiRec.sold.toLocaleString()} sold) among all results.`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+    spKaiRec = null;
+  }
+
+  grid.innerHTML = results.length
+    ? results.map(p => spCardHTML(p, kaiSettings.strictness && spKaiRec && p.id === spKaiRec.id)).join('')
+    : '<div style="text-align:center;padding:30px;color:#999;font-family:Inter,sans-serif;font-size:12px">No results found</div>';
+  spShowSub('sp-results');
+  if (guideActive) setTimeout(renderGuideStep, 300);
+}
+
+function spOpenProduct(id) {
+  const p = id === '__kai_rec__' ? spKaiRec : spProducts.find(x => x.id === id);
+  if (!p) return;
+  spCurrentProduct = p;
+  document.getElementById('sp-product-img').textContent   = p.emoji;
+  document.getElementById('sp-product-name').textContent  = p.name;
+  document.getElementById('sp-product-rating').textContent = `★ ${p.rating} (${p.sold.toLocaleString()} ratings)`;
+  document.getElementById('sp-product-sold').textContent  = `${p.sold.toLocaleString()} sold`;
+  document.getElementById('sp-product-price').textContent = `₱${p.price.toLocaleString()}`;
+  document.getElementById('sp-product-desc').textContent  = p.desc;
+  document.getElementById('sp-add-cart-btn').innerHTML    = '<i class="fas fa-cart-plus"></i> Add to Cart';
+  spShowSub('sp-product');
+  if (guideActive) setTimeout(renderGuideStep, 300);
+}
+
+function spBackToResults() {
+  spShowSub('sp-results');
+  if (guideActive) setTimeout(renderGuideStep, 250);
+}
+
+function spAddToCart() {
+  if (!spCurrentProduct) return;
+  spCart.push({ ...spCurrentProduct });
+  const badge = document.getElementById('sp-cart-badge');
+  badge.style.display = 'flex';
+  badge.textContent = spCart.length;
+  document.getElementById('sp-add-cart-btn').innerHTML = '<i class="fas fa-check"></i> Added!';
+  showToast('🛒 Added to cart: ' + spCurrentProduct.name);
+  if (guideActive) setTimeout(renderGuideStep, 300);
+}
+
+function spBuyNow() {
+  if (!spCurrentProduct) return;
+  spAddToCart();
+  setTimeout(() => { spShowSub('sp-cart'); spRenderCart(); }, 300);
+}
+
+function spRenderCart() {
+  const el = document.getElementById('sp-cart-items');
+  const count = document.getElementById('sp-cart-count');
+  count.textContent = spCart.length;
+  if (!spCart.length) {
+    el.innerHTML = '<div class="sp-empty-cart"><span class="sp-empty-cart-emoji">🛒</span>Your cart is empty</div>';
+    document.getElementById('sp-cart-total').textContent = '₱0.00';
+    return;
+  }
+  el.innerHTML = spCart.map(p => `
+    <div class="sp-cart-item">
+      <div class="sp-cart-item-emoji">${p.emoji}</div>
+      <div class="sp-cart-item-info">
+        <div class="sp-cart-item-name">${p.name}</div>
+        <div class="sp-cart-item-price">₱${p.price.toLocaleString()}</div>
+      </div>
+    </div>`).join('');
+  const total = spCart.reduce((s, p) => s + p.price, 0);
+  document.getElementById('sp-cart-total').textContent = '₱' + total.toLocaleString();
+}
+
+function spCheckout() {
+  showToast('✅ Order placed successfully! Arriving in 3–5 days.');
+  speak("Your order has been placed! It will arrive in 3 to 5 days.");
+  spCart = [];
+  document.getElementById('sp-cart-badge').style.display = 'none';
+  setTimeout(() => spShowSub('sp-home'), 1200);
+}
+
+function spOpenCart() {
+  spShowSub('sp-cart');
+  spRenderCart();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const cartBtn = document.getElementById('sp-cart-btn');
+  if (cartBtn) cartBtn.onclick = () => spOpenCart();
+});
+
+/* ── Shop guide — no strictness (just search) ── */
+const shopGuideBasic = [
+  {
+    targetId: 'home-shopee-icon',
+    viewId:   'home-screen',
+    message:  "Let's find what you need! First, tap the Shopee icon to open the app.",
+    tapToAdvance: true,
+    onTap() { openApp('shopee'); },
+  },
+  {
+    targetId: 'sp-search-input',
+    viewId:   'shopee-screen',
+    subviewId: 'sp-home',
+    message:  "Type the product you're looking for in the search bar, then press Enter.",
+    tapToAdvance: false,
+    okLabel:  "I searched →",
+  },
+  {
+    targetId: 'sp-results-grid',
+    viewId:   'shopee-screen',
+    subviewId: 'sp-results',
+    message:  "Here are your search results! Tap any product to see its details, price, and reviews.",
+    tapToAdvance: false,
+    okLabel:  "Got it ✓",
+  },
+];
+
+/* ── Shop guide — WITH strictness (KAI recommends best pick) ── */
+const shopGuideStrict = [
+  {
+    targetId: 'home-shopee-icon',
+    viewId:   'home-screen',
+    message:  "Let's go shopping! Tap the Shopee icon to open the app.",
+    tapToAdvance: true,
+    onTap() { openApp('shopee'); },
+  },
+  {
+    targetId: 'sp-search-input',
+    viewId:   'shopee-screen',
+    subviewId: 'sp-home',
+    message:  "Type the product you want in the search bar and press Enter. I'll analyze the results for you!",
+    tapToAdvance: false,
+    okLabel:  "I searched →",
+  },
+  {
+    targetId: 'sp-kai-banner',
+    viewId:   'shopee-screen',
+    subviewId: 'sp-results',
+    message:  "I analyzed all the results and picked the BEST product — based on the highest combination of rating and sales volume. Check my recommendation above!",
+    tapToAdvance: false,
+    okLabel:  "Show me →",
+  },
+  {
+    targetId: 'sp-kai-rec-card',
+    viewId:   'shopee-screen',
+    subviewId: 'sp-results',
+    message:  "This is my top pick! Tap it to see full details — price, reviews, and description.",
+    tapToAdvance: true,
+    onTap() { if (spKaiRec) spOpenProduct(spKaiRec.id); },
+  },
+  {
+    targetId: 'sp-add-cart-btn',
+    viewId:   'shopee-screen',
+    subviewId: 'sp-product',
+    message:  "You're on the product page. Review the details, and if you're happy, tap 'Add to Cart'!",
+    tapToAdvance: true,
+    onTap() { spAddToCart(); },
+  },
+];
 
 /* ═══════════════════════════════════
    FACEBOOK
@@ -696,6 +976,7 @@ function renderGuideStep() {
   if (step.viewId && currentApp !== step.viewId) showView(step.viewId);
   if (step.subviewId) {
     if (step.viewId === 'facebook-screen') fbShowSub(step.subviewId);
+    else if (step.viewId === 'shopee-screen') spShowSub(step.subviewId);
     else gcashShowSub(step.subviewId);
   }
   if (step.onShow) setTimeout(step.onShow, 200);
@@ -906,14 +1187,92 @@ function setListening(v) {
 }
 function setKaiStatus(s) {
   const el = document.getElementById('kai-subtitle');
-  if (el) el.textContent = (s === 'READY')
-    ? 'Try: "Help me send money" or "How to react on Facebook"' : s;
+  if (el) el.textContent = (s === 'READY') ? langHints[kaiSettings.language] : s;
 }
 function setKaiTranscript(t) { document.getElementById('kai-transcript').textContent = t; }
 
 /* ═══════════════════════════════════
-   COMMANDS
+   KAI SETTINGS
 ═══════════════════════════════════ */
+function openKaiSettings() {
+  showView('kai-settings-screen');
+  renderSettingsState();
+}
+function closeKaiSettings() {
+  showView('kai-screen');
+}
+
+function toggleStrictness() {
+  kaiSettings.strictness = !kaiSettings.strictness;
+  renderSettingsState();
+  const msg = kaiSettings.strictness
+    ? "Intervention Strictness is ON. When you shop, I'll recommend the best product based on ratings and sales."
+    : "Intervention Strictness is OFF. I'll guide you through tasks without extra suggestions.";
+  showToast(kaiSettings.strictness ? '🧠 Strictness ON' : '🧠 Strictness OFF');
+  speak(msg);
+}
+
+function renderSettingsState() {
+  // Spend Guard toggle
+  const toggle = document.getElementById('childlock-toggle');
+  const desc   = document.getElementById('childlock-desc');
+  const info   = document.getElementById('kai-childlock-info');
+  if (kaiSettings.childLock) {
+    toggle?.classList.add('on');
+    if (desc) desc.textContent = 'Money guides are blocked';
+    info?.classList.add('active');
+  } else {
+    toggle?.classList.remove('on');
+    if (desc) desc.textContent = 'Financial guides are unlocked';
+    info?.classList.remove('active');
+  }
+
+  // Strictness toggle
+  const stToggle = document.getElementById('strictness-toggle');
+  const stDesc   = document.getElementById('strictness-desc');
+  if (kaiSettings.strictness) {
+    stToggle?.classList.add('on');
+    if (stDesc) stDesc.textContent = 'KAI actively suggests best products';
+  } else {
+    stToggle?.classList.remove('on');
+    if (stDesc) stDesc.textContent = 'KAI only guides, no suggestions';
+  }
+
+  // Language buttons
+  ['english','taglish','tagalog'].forEach(lang => {
+    document.getElementById('lang-' + lang)
+      ?.classList.toggle('active', kaiSettings.language === lang);
+  });
+}
+
+function toggleChildLock() {
+  kaiSettings.childLock = !kaiSettings.childLock;
+  renderSettingsState();
+  const msg = kaiSettings.childLock
+    ? "Spend Guard is now on. I won't guide any money transfers or payments."
+    : "Spend Guard is off. I can now help with money guides again.";
+  showToast(kaiSettings.childLock ? '🔒 Spend Guard ON' : '🔓 Spend Guard OFF');
+  speak(msg);
+}
+
+const langHints = {
+  english: 'Try: "Send money" · "Upload a photo" · "React to a post"',
+  taglish:  'Subukan: "Magpadala ng pera" · "Mag-upload ng photo"',
+  tagalog:  'Subukan: "Magpadala ng pera" · "Ibahagi ang post"',
+};
+
+function setLanguage(lang) {
+  kaiSettings.language = lang;
+  renderSettingsState();
+  const el = document.getElementById('kai-subtitle');
+  if (el) el.textContent = langHints[lang];
+  showToast('🌐 Input language: ' + lang.charAt(0).toUpperCase() + lang.slice(1));
+  speak("Got it! You can now speak to me in " + lang + ". I'll still reply in English.");
+}
+
+function updateLangPreview() {} // no-op, preview removed
+
+
 function takeCommand(msg) {
   setKaiStatus('PROCESSING...');
   const respond = (text, action) => {
@@ -923,69 +1282,190 @@ function takeCommand(msg) {
     setTimeout(() => setKaiStatus('READY'), 3500);
   };
 
-  if (msg.includes('send money') || msg.includes('transfer') ||
-      msg.includes('help me send') || msg.includes('magpadala') ||
-      msg.includes('padala')) {
-    respond("Sure! Follow the yellow highlights — I'll guide you step by step to send money safely.", () => {
-      startGuide(sendMoneyFlow);
-    });
+  const lang = kaiSettings.language; // 'english' | 'taglish' | 'tagalog'
+
+  // ── Intent keyword maps per language ──────────────────────────
+  const intents = {
+
+    sendMoney: {
+      english: ['send money','transfer money','help me send','how to send'],
+      taglish:  ['magpadala ng pera','padala ng pera','help me magpadala','paano magpadala','mag send ng pera'],
+      tagalog:  ['magpadala ng pera','paano magpadala','tulungan mo akong magpadala','padala'],
+    },
+
+    receiveMoney: {
+      english: ['receive money','help me receive','activate qr','qr code','how to receive'],
+      taglish:  ['tumanggap ng pera','i-activate ang qr','qr code ko','paano tumanggap','help me tumanggap'],
+      tagalog:  ['tumanggap ng pera','paano tumanggap','i-activate ang qr code','kunin ang pera'],
+    },
+
+    uploadPhoto: {
+      english: ['upload a photo','post a photo','how do i upload','share a photo','post photo'],
+      taglish:  ['mag-upload ng photo','mag post ng picture','paano mag-upload','i-share ang photo'],
+      tagalog:  ['mag-upload ng larawan','paano mag-post ng larawan','i-share ang larawan'],
+    },
+
+    reactPost: {
+      english: ['react to a post','how to react','like a post','how do i react','love react'],
+      taglish:  ['mag-react sa post','paano mag-react','i-like ang post','paano mag-like'],
+      tagalog:  ['mag-react sa objek','paano mag-like','paano mag-react sa post'],
+    },
+
+    sharePost: {
+      english: ['share a post','how to share','share post','how do i share'],
+      taglish:  ['i-share ang post','paano mag-share','share ng post','mag share'],
+      tagalog:  ['ibahagi ang post','paano ibahagi','paano mag-share ng post'],
+    },
+
+    shopee: {
+      english: ['help me shop','open shopee','shopee','help me buy','i want to buy','shop in shopee'],
+      taglish:  ['help me shop','buksan ang shopee','shopee','gusto kong bumili','mag-shop sa shopee'],
+      tagalog:  ['tulungan mo akong mamili','buksan ang shopee','shopee','gusto kong bumili'],
+    },
+
+    openFacebook: {
+      english: ['open facebook','facebook'],
+      taglish:  ['buksan ang facebook','facebook'],
+      tagalog:  ['buksan ang facebook','facebook'],
+    },
+
+    openGcash: {
+      english: ['open gcash','gcash'],
+      taglish:  ['buksan ang gcash','gcash'],
+      tagalog:  ['buksan ang gcash','gcash'],
+    },
+
+    openGoogle: {
+      english: ['open google'],
+      taglish:  ['buksan ang google','open google'],
+      tagalog:  ['buksan ang google'],
+    },
+
+    openYoutube: {
+      english: ['open youtube'],
+      taglish:  ['buksan ang youtube','open youtube'],
+      tagalog:  ['buksan ang youtube'],
+    },
+
+    calculator: {
+      english: ['calculator','open calculator'],
+      taglish:  ['calculator','kalkulator','buksan ang calculator'],
+      tagalog:  ['kalkulator','buksan ang kalkulator'],
+    },
+
+    clock: {
+      english: ['open clock','clock'],
+      taglish:  ['buksan ang oras','open clock','orasan'],
+      tagalog:  ['buksan ang orasan','orasan'],
+    },
+
+    wikipedia: {
+      english: ['wikipedia','open wikipedia'],
+      taglish:  ['wikipedia','buksan ang wikipedia'],
+      tagalog:  ['wikipedia','buksan ang wikipedia'],
+    },
+
+    time: {
+      english: ['what time','current time','time is it'],
+      taglish:  ['anong oras','what time','oras na'],
+      tagalog:  ['anong oras na','sabihin ang oras'],
+    },
+
+    date: {
+      english: ['what date','today date','what day'],
+      taglish:  ['anong petsa','what date','anong araw'],
+      tagalog:  ['anong petsa','anong araw ngayon'],
+    },
+
+    settings: {
+      english: ['settings','open settings'],
+      taglish:  ['settings','buksan ang settings'],
+      tagalog:  ['mga setting','buksan ang mga setting'],
+    },
+
+    goHome: {
+      english: ['go home','home screen'],
+      taglish:  ['go home','home screen','uwi'],
+      tagalog:  ['umuwi','bumalik sa home'],
+    },
+
+    hello: {
+      english: ['hello','hey','hi kai'],
+      taglish:  ['hello','hey','kumusta','oy kai'],
+      tagalog:  ['kumusta','magandang araw','helo'],
+    },
+  };
+
+  // Helper — checks if msg matches any keyword for the given intent + active language
+  const is = (intent) => (intents[intent][lang] || []).some(k => msg.includes(k));
+
+  // ── Wrong-language detection ──────────────────────────────────
+  // Check if msg matches a *different* language's keywords
+  const otherLangs = ['english','taglish','tagalog'].filter(l => l !== lang);
+  const matchesOtherLang = (intent) =>
+    otherLangs.some(l => (intents[intent][l] || []).some(k => msg.includes(k)));
+  const anyOtherLangMatch = Object.keys(intents).some(i => matchesOtherLang(i));
+
+  const wrongLangMsg = {
+    english: "I only recognize English commands right now. Go to Settings to change the input language.",
+    taglish:  "I only recognize Taglish commands right now. Go to Settings to change the input language.",
+    tagalog:  "I only recognize Tagalog commands right now. Go to Settings to change the input language.",
+  };
+
+  // ── Route intents ─────────────────────────────────────────────
+  if (is('sendMoney')) {
+    if (kaiSettings.childLock) {
+      respond("Sorry, financial guides are currently restricted. Ask a parent or guardian to turn off Child Lock in KAI Settings.");
+      return;
+    }
+    respond("Sure! Follow the highlights — I'll guide you step by step to send money safely.", () => startGuide(sendMoneyFlow));
   }
-  else if (msg.includes('receive money') || msg.includes('help me receive') ||
-           msg.includes('qr code') || msg.includes('activate qr') ||
-           msg.includes('tumanggap') || msg.includes('receive')) {
-    respond("Sure! I'll guide you step by step on how to activate your QR code so people can send you money. Follow the highlights!", () => {
+  else if (is('receiveMoney')) {
+    if (kaiSettings.childLock) {
+      respond("Sorry, financial guides are currently restricted. Ask a parent or guardian to turn off Child Lock in KAI Settings.");
+      return;
+    }
+    respond("Sure! I'll guide you on how to activate your QR code so people can send you money!", () => {
       openApp('gcash');
       setTimeout(() => startGuide(receiveMoneyFlow), 700);
     });
   }
-  else if (msg.includes('upload') || msg.includes('post a photo') ||
-           msg.includes('post photo') || msg.includes('mag upload') ||
-           msg.includes('how do i upload') || msg.includes('share a photo')) {
-    respond("Sure! I'll guide you step by step on how to upload a photo on Facebook. Follow the yellow highlights!", () => {
-      startGuide(uploadPhotoFlow);
-    });
+  else if (is('uploadPhoto'))  respond("Sure! I'll guide you step by step on how to upload a photo on Facebook!", () => startGuide(uploadPhotoFlow));
+  else if (is('shopee')) {
+    if (kaiSettings.strictness) {
+      respond("Shopping mode with recommendations! I'll find products AND suggest the best one based on ratings and sales. Let's go!", () => startGuide(shopGuideStrict));
+    } else {
+      respond("Sure! I'll guide you through Shopee so you can find what you need.", () => startGuide(shopGuideBasic));
+    }
   }
-  else if (msg.includes('react') || msg.includes('how to react') ||
-           msg.includes('like a post') || msg.includes('mag react') ||
-           msg.includes('love react') || msg.includes('how do i react')) {
-    respond("Sure! I'll show you how to react to a Facebook post step by step. Follow the highlights!", () => {
-      startGuide(reactPostFlow);
-    });
-  }
-  else if (msg.includes('share a post') || msg.includes('how to share') ||
-           msg.includes('mag share') || msg.includes('i share') ||
-           msg.includes('share post') || msg.includes('how do i share')) {
-    respond("Let me guide you on how to share a Facebook post! Follow the highlights step by step.", () => {
-      startGuide(sharePostFlow);
-    });
-  }
-  else if (msg.includes('facebook') || msg.includes('open facebook')) {
-    respond("Opening Facebook!", () => openApp('facebook'));
-  }
-  else if (msg.includes('gcash') || msg.includes('open gcash')) {
-    respond("Opening GCash. Say help me send money to get guided step by step!", () => openApp('gcash'));
-  }
-  else if (msg.includes('open google'))   respond("Opening Google.",     () => openApp('google'));
-  else if (msg.includes('open youtube'))  respond("Opening YouTube.",    () => openApp('youtube'));
-  else if (msg.includes('calculator'))    respond("Opening Calculator.", () => openApp('calculator'));
-  else if (msg.includes('open clock'))    respond("Opening Clock.",      () => openApp('clock'));
-  else if (msg.includes('wikipedia')) {
-    const q = msg.replace('open wikipedia','').replace('wikipedia','').trim();
+  else if (is('reactPost'))    respond("Sure! I'll show you how to react to a Facebook post step by step!", () => startGuide(reactPostFlow));
+  else if (is('sharePost'))    respond("Let me guide you on how to share a Facebook post step by step!", () => startGuide(sharePostFlow));
+  else if (is('openFacebook')) respond("Opening Facebook!", () => openApp('facebook'));
+  else if (is('openGcash'))    respond("Opening GCash!", () => openApp('gcash'));
+  else if (is('openGoogle'))   respond("Opening Google.", () => openApp('google'));
+  else if (is('openYoutube'))  respond("Opening YouTube.", () => openApp('youtube'));
+  else if (is('calculator'))   respond("Opening Calculator.", () => openApp('calculator'));
+  else if (is('clock'))        respond("Opening Clock.", () => openApp('clock'));
+  else if (is('wikipedia')) {
+    const q = msg.replace(/wikipedia|buksan|ang|open/g,'').trim();
     respond("Opening Wikipedia." + (q ? ' Searching for ' + q + '.' : ''), () => {
       openApp('wikipedia');
       if (q) setTimeout(() => wikiSearch(q), 400);
     });
   }
-  else if (msg.includes('time'))
-    respond("The current time is " + new Date().toLocaleString(undefined,{hour:'numeric',minute:'numeric'}));
-  else if (msg.includes('date'))
-    respond("Today is " + new Date().toLocaleString(undefined,{weekday:'long',month:'long',day:'numeric'}));
-  else if (msg.includes('go home') || msg.includes('home screen'))
-    respond("Going home.", goHome);
-  else if (msg.includes('hello') || msg.includes('hey'))
-    respond("Hello! I'm KAI. Say help me send money and I'll guide you through GCash step by step!");
-  else
-    respond("I didn't catch that. Try: help me send money, open GCash, or open calculator.");
+  else if (is('time'))     respond("The current time is " + new Date().toLocaleString(undefined,{hour:'numeric',minute:'numeric'}));
+  else if (is('date'))     respond("Today is " + new Date().toLocaleString(undefined,{weekday:'long',month:'long',day:'numeric'}));
+  else if (is('settings')) respond("Opening KAI Settings!", () => openKaiSettings());
+  else if (is('goHome'))   respond("Going home.", goHome);
+  else if (is('hello')) {
+    respond("Hello! I'm KAI. Try saying 'send money', 'upload a photo', or 'react to a post'!");
+  }
+  else if (anyOtherLangMatch) {
+    respond(wrongLangMsg[lang]);
+  }
+  else {
+    respond("I didn't catch that. Try: 'send money', 'open GCash', or 'upload a photo'.");
+  }
 }
 
 /* ═══════════════════════════════════
