@@ -9,149 +9,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.61/build/spline-viewer.js"></script>
 <link rel="stylesheet" href="styles.css">
-<style>
-  /* ── K·A·I title — tight modern ── */
-  .kai-name {
-    font-size: 52px !important;
-    letter-spacing: 10px !important;
-    font-weight: 900 !important;
-    margin-bottom: 6px !important;
-  }
-  .kai-subtitle {
-    font-weight: 400 !important;
-    font-style: italic !important;
-    color: rgba(255,255,255,0.55) !important;
-    letter-spacing: 0.3px !important;
-  }
-
-  /* ── Home screen — iOS glassmorphism ── */
-  #home-screen {
-    background:
-      radial-gradient(ellipse 130% 55% at 15% 5%,  rgba(120,60,255,0.4)  0%, transparent 55%),
-      radial-gradient(ellipse 100% 45% at 85% 25%, rgba(0,180,255,0.28)  0%, transparent 55%),
-      radial-gradient(ellipse 90%  55% at 50% 95%, rgba(255,60,120,0.22) 0%, transparent 55%),
-      linear-gradient(175deg, #07001a 0%, #04091c 45%, #060011 100%) !important;
-  }
-
-  /* Greeting */
-  .home-greeting {
-    font-size: 12px !important;
-    letter-spacing: 3px !important;
-    color: rgba(255,255,255,0.45) !important;
-    font-family: "Inter", sans-serif !important;
-    font-weight: 300 !important;
-    padding-top: 70px !important;
-    margin-bottom: 2px !important;
-  }
-
-  /* Big time */
-  .home-date {
-    font-size: 60px !important;
-    font-weight: 200 !important;
-    color: #ffffff !important;
-    letter-spacing: -3px !important;
-    line-height: 1 !important;
-    margin-bottom: 2px !important;
-    font-family: "Inter", sans-serif !important;
-    text-shadow: 0 2px 20px rgba(180,140,255,0.3) !important;
-  }
-  .home-date span {
-    font-size: 11px !important;
-    color: rgba(255,255,255,0.42) !important;
-    letter-spacing: 2.5px !important;
-    font-family: "Inter", sans-serif !important;
-    font-weight: 400 !important;
-    margin-top: 5px !important;
-    text-transform: uppercase !important;
-  }
-
-  /* Grid */
-  .app-grid {
-    gap: 20px 14px !important;
-    padding: 6px 2px !important;
-    margin-top: 14px !important;
-  }
-
-  /* Frosted glass icons */
-  .app-icon-img {
-    width: 58px !important;
-    height: 58px !important;
-    border-radius: 17px !important;
-    font-size: 26px !important;
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.16) !important;
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.22),
-      inset 0 -1px 0 rgba(0,0,0,0.15),
-      0 6px 20px rgba(0,0,0,0.45) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-    transition: transform .12s ease, box-shadow .18s ease !important;
-  }
-  .app-icon:active .app-icon-img { transform: scale(0.87) !important; }
-  .app-icon:hover .app-icon-img {
-    background: rgba(255,255,255,0.13) !important;
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.32),
-      0 0 24px rgba(255,255,255,0.18),
-      0 8px 24px rgba(0,0,0,0.5) !important;
-  }
-
-  /* App colour tints */
-  .ai-google   { background: rgba(66,133,244,0.22)  !important; border-color: rgba(66,133,244,0.32)  !important; }
-  .ai-youtube  { background: rgba(255,30,30,0.22)   !important; border-color: rgba(255,30,30,0.32)   !important; }
-  .ai-facebook { background: rgba(24,119,242,0.22)  !important; border-color: rgba(24,119,242,0.32)  !important; }
-  .ai-gcash    { background: rgba(0,112,186,0.28)   !important; border-color: rgba(0,168,224,0.36)   !important; }
-  .ai-calc     { background: rgba(140,0,255,0.22)   !important; border-color: rgba(180,60,255,0.32)  !important; }
-  .ai-clock    { background: rgba(255,185,0,0.2)    !important; border-color: rgba(255,200,0,0.3)    !important; }
-  .ai-wiki     { background: rgba(200,200,200,0.1)  !important; border-color: rgba(200,200,200,0.2)  !important; }
-  .ai-maps     { background: rgba(52,168,83,0.22)   !important; border-color: rgba(76,175,80,0.32)   !important; }
-  .ai-shopee   { background: rgba(238,77,45,0.24)   !important; border-color: rgba(238,77,45,0.34)   !important; }
-  .ai-kai      { background: rgba(180,160,255,0.16) !important; border-color: rgba(200,180,255,0.28) !important; }
-
-  /* Labels */
-  .app-icon-label {
-    font-size: 10px !important;
-    font-family: "Inter", sans-serif !important;
-    font-weight: 500 !important;
-    color: rgba(255,255,255,0.82) !important;
-    letter-spacing: 0px !important;
-    text-shadow: 0 1px 5px rgba(0,0,0,0.8) !important;
-  }
-
-  /* Frosted dock */
-  .home-dock {
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.18) !important;
-    border-radius: 32px !important;
-    backdrop-filter: blur(40px) !important;
-    -webkit-backdrop-filter: blur(40px) !important;
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.18),
-      0 10px 40px rgba(0,0,0,0.55) !important;
-    padding: 14px 28px !important;
-  }
-  .dock-icon {
-    width: 54px !important;
-    height: 54px !important;
-    border-radius: 16px !important;
-    background: rgba(255,255,255,0.1) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.22),
-      0 4px 14px rgba(0,0,0,0.35) !important;
-  }
-  .dock-kai-label {
-    font-family: "Inter", sans-serif !important;
-    font-size: 10px !important;
-    font-weight: 500 !important;
-    color: rgba(255,255,255,0.72) !important;
-    letter-spacing: 0.3px !important;
-  }
-
-  /* Banner must never collapse */
-  .sp-kai-banner { flex-shrink: 0 !important; }
-</style>
 </head>
 <body>
 <div class="grid-bg"></div>
@@ -184,35 +41,35 @@
         <span id="home-date-text">SAT, FEB 28</span>
       </div>
       <div class="app-grid">
-        <div class="app-icon">
+        <div class="app-icon" onclick="openApp('google')">
           <div class="app-icon-img ai-google">🌐</div>
           <div class="app-icon-label">Google</div>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="openApp('youtube')">
           <div class="app-icon-img ai-youtube">▶️</div>
           <div class="app-icon-label">YouTube</div>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="openApp('facebook')">
           <div class="app-icon-img ai-facebook" id="fb-app-icon">📘</div>
           <div class="app-icon-label">Facebook</div>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="openApp('gcash')">
           <div class="app-icon-img ai-gcash" id="home-gcash-icon">💳</div>
           <div class="app-icon-label">GCash</div>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="openApp('calculator')">
           <div class="app-icon-img ai-calc">🔢</div>
           <div class="app-icon-label">Calc</div>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="openApp('clock')">
           <div class="app-icon-img ai-clock">🕐</div>
           <div class="app-icon-label">Clock</div>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="openApp('wikipedia')">
           <div class="app-icon-img ai-wiki">📖</div>
           <div class="app-icon-label">Wiki</div>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="openApp('maps')">
           <div class="app-icon-img ai-maps">🗺️</div>
           <div class="app-icon-label">Maps</div>
         </div>
@@ -220,7 +77,11 @@
           <div class="app-icon-img ai-shopee" id="home-shopee-icon">🛒</div>
           <div class="app-icon-label">Shopee</div>
         </div>
-      </div>
+        <div class="app-icon" onclick="openApp('contacts')">
+          <div class="app-icon-img ai-contacts">👥</div>
+          <div class="app-icon-label">Contacts</div>
+        </div>
+      </div><!-- /app-grid -->
 
       <div class="home-dock">
         <div class="dock-kai-wrapper" onclick="openApp('kai')">
@@ -246,9 +107,34 @@
       <div class="kai-bottom">
         <h1 class="kai-name">K · A · I</h1>
         <p class="kai-subtitle" id="kai-subtitle">Hello! How may I help you?</p>
+
+        <!-- Mode toggle -->
+        <div class="kai-mode-toggle">
+          <button class="kai-mode-btn active" id="kai-mode-voice" onclick="kaiSetMode('voice')">
+            <i class="fas fa-microphone-alt"></i> Voice
+          </button>
+          <button class="kai-mode-btn" id="kai-mode-chat" onclick="kaiSetMode('chat')">
+            <i class="fas fa-comment-alt"></i> Chat
+          </button>
+        </div>
+
+        <!-- Voice bar -->
         <div class="kai-input-bar" id="kai-input-bar" onclick="startListening()">
           <div class="kai-mic-icon" id="kai-mic-icon"><i class="fas fa-microphone-alt"></i></div>
           <span class="kai-bar-text" id="kai-transcript">Tap to speak</span>
+        </div>
+
+        <!-- Chat input (hidden by default) -->
+        <div class="kai-chat-wrap" id="kai-chat-wrap">
+          <div class="kai-chat-history" id="kai-chat-history"></div>
+          <div class="kai-chat-input-row">
+            <input class="kai-chat-input" id="kai-chat-input"
+              placeholder="Type a command…"
+              onkeydown="if(event.key==='Enter') sendChat()">
+            <button class="kai-chat-send" onclick="sendChat()">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1318,6 +1204,48 @@
 
     <!-- HOME BAR -->
     <div class="home-indicator" onclick="stopGuide();goHome();"></div>
+
+    <!-- ══ CONTACTS ══ -->
+    <div class="view" id="contacts-screen">
+      <div class="ct-topbar">
+        <button class="ct-back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> HOME</button>
+        <span class="ct-title">Contacts</span>
+        <button class="ct-search-btn" onclick="ctToggleSearch()"><i class="fas fa-search"></i></button>
+      </div>
+      <div class="ct-search-bar" id="ct-search-bar">
+        <i class="fas fa-search ct-search-icon"></i>
+        <input class="ct-search-input" id="ct-search-input" placeholder="Search contacts…" oninput="ctFilter(this.value)">
+      </div>
+      <div class="ct-list" id="ct-list"></div>
+    </div>
+
+    <!-- ══ DIAL OVERLAY ══ -->
+    <div class="dial-overlay" id="dial-overlay">
+      <div class="dial-content">
+        <div class="dial-avatar" id="dial-avatar">👤</div>
+        <div class="dial-name" id="dial-name">Name</div>
+        <div class="dial-number" id="dial-number">+63 9XX XXX XXXX</div>
+        <div class="dial-status" id="dial-status">Calling…</div>
+        <div class="dial-timer" id="dial-timer"></div>
+        <div class="dial-actions">
+          <button class="dial-action-btn" onclick="dialToggleMute()" id="dial-mute-btn">
+            <i class="fas fa-microphone-slash"></i>
+            <span>Mute</span>
+          </button>
+          <button class="dial-action-btn" onclick="dialToggleSpeaker()" id="dial-speaker-btn">
+            <i class="fas fa-volume-up"></i>
+            <span>Speaker</span>
+          </button>
+          <button class="dial-action-btn" onclick="dialOpenKeypad()">
+            <i class="fas fa-th"></i>
+            <span>Keypad</span>
+          </button>
+        </div>
+        <button class="dial-end-btn" onclick="endCall()">
+          <i class="fas fa-phone-slash"></i>
+        </button>
+      </div>
+    </div>
 
     <!-- ══ KAI GUIDE OVERLAY ══ -->
     <div id="kai-guide-overlay">

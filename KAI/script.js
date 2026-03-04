@@ -125,6 +125,7 @@ function openApp(name) {
   if (name === 'gcash')      { showView('gcash-screen'); gcashShowSub('gcash-home'); return; }
   if (name === 'facebook')   { showView('facebook-screen'); fbShowSub('fb-home'); return; }
   if (name === 'shopee')     { showView('shopee-screen'); spShowSub('sp-home'); spBuildHome(); return; }
+  if (name === 'contacts')   { showView('contacts-screen'); ctBuildList(contacts); return; }
   const cfg = appConfig[name]; if (!cfg) return;
   externalUrl = cfg.url;
   document.getElementById('external-title').textContent   = cfg.title;
@@ -1331,8 +1332,55 @@ function setKaiStatus(s) {
 function setKaiTranscript(t) { document.getElementById('kai-transcript').textContent = t; }
 
 /* ═══════════════════════════════════
-   KAI SETTINGS
+   KAI CHAT MODE
 ═══════════════════════════════════ */
+function kaiSetMode(mode) {
+  const voiceBar  = document.getElementById('kai-input-bar');
+  const chatWrap  = document.getElementById('kai-chat-wrap');
+  const btnVoice  = document.getElementById('kai-mode-voice');
+  const btnChat   = document.getElementById('kai-mode-chat');
+
+  if (mode === 'voice') {
+    voiceBar.style.display = 'flex';
+    chatWrap.classList.remove('active');
+    btnVoice.classList.add('active');
+    btnChat.classList.remove('active');
+  } else {
+    voiceBar.style.display = 'none';
+    chatWrap.classList.add('active');
+    btnChat.classList.add('active');
+    btnVoice.classList.remove('active');
+    setTimeout(() => document.getElementById('kai-chat-input').focus(), 150);
+  }
+}
+
+function sendChat() {
+  const input = document.getElementById('kai-chat-input');
+  const msg   = (input.value || '').trim();
+  if (!msg) return;
+  input.value = '';
+
+  // Append user bubble
+  appendChatMsg(msg, 'user');
+
+  // Run through same command engine as voice
+  takeCommand(msg.toLowerCase(), true);
+}
+
+function appendChatMsg(text, who) {
+  const history = document.getElementById('kai-chat-history');
+  const div = document.createElement('div');
+  div.className = 'kai-chat-msg ' + who;
+  if (who === 'kai') {
+    div.innerHTML = '<span class="kai-chat-label">K·A·I</span>' + text;
+  } else {
+    div.textContent = text;
+  }
+  history.appendChild(div);
+  history.scrollTop = history.scrollHeight;
+}
+
+
 function openKaiSettings() {
   showView('kai-settings-screen');
   renderSettingsState();
@@ -1412,12 +1460,13 @@ function setLanguage(lang) {
 function updateLangPreview() {} // no-op, preview removed
 
 
-function takeCommand(msg) {
+function takeCommand(msg, fromChat = false) {
   setKaiStatus('PROCESSING...');
   const respond = (text, action) => {
     setKaiStatus('RESPONDING');
     setKaiTranscript(text);
     showToast('🤖 ' + text);
+    if (fromChat) appendChatMsg(text, 'kai');
     // Fire action only after speech synthesis actually finishes — no guessing needed
     speak(text, action ? () => { action(); setTimeout(() => setKaiStatus('READY'), 400); } : null);
     if (!action) setTimeout(() => setKaiStatus('READY'), 3500);
@@ -1530,6 +1579,18 @@ function takeCommand(msg) {
       tagalog:  ['umuwi','bumalik sa home'],
     },
 
+    openContacts: {
+      english: ['open contacts','contacts'],
+      taglish:  ['buksan ang contacts','contacts'],
+      tagalog:  ['buksan ang contacts','contacts'],
+    },
+
+    dialContact: {
+      english: ['call','dial','contact','phone'],
+      taglish:  ['tawagan','i-call','i-dial','tumawag'],
+      tagalog:  ['tawagan','tumawag kay','i-call'],
+    },
+
     hello: {
       english: ['hello','hey','hi kai'],
       taglish:  ['hello','hey','kumusta','oy kai'],
@@ -1598,6 +1659,27 @@ function takeCommand(msg) {
   else if (is('date'))     respond("Today is " + new Date().toLocaleString(undefined,{weekday:'long',month:'long',day:'numeric'}));
   else if (is('settings')) respond("Opening KAI Settings!", () => openKaiSettings());
   else if (is('goHome'))   respond("Going home.", goHome);
+  else if (is('openContacts')) respond("Opening Contacts!", () => openApp('contacts'));
+  else if (is('dialContact')) {
+    // Extract name from message by stripping trigger words
+    const stripWords = ['call','dial','contact','phone','tawagan','i-call','i-dial','tumawag','tumawag kay','tawagan','please','pls','can you','si'];
+    let nameQuery = msg;
+    stripWords.forEach(w => { nameQuery = nameQuery.replace(new RegExp('\\b' + w + '\\b','gi'), ''); });
+    nameQuery = nameQuery.trim();
+    if (!nameQuery) {
+      respond("Who would you like to call? Try saying 'call Ana Santos'.");
+      return;
+    }
+    const match = contacts.find(c => c.name.toLowerCase().includes(nameQuery));
+    if (match) {
+      respond(`Calling ${match.name}!`, () => {
+        openApp('contacts');
+        setTimeout(() => startCall(match), 400);
+      });
+    } else {
+      respond(`I couldn't find "${nameQuery}" in your contacts. Try opening Contacts to find the right name.`);
+    }
+  }
   else if (is('hello')) {
     respond("Hello! I'm KAI. Try saying 'send money', 'upload a photo', or 'react to a post'!");
   }
@@ -1607,6 +1689,127 @@ function takeCommand(msg) {
   else {
     respond("I didn't catch that. Try: 'send money', 'open GCash', or 'upload a photo'.");
   }
+}
+
+/* ═══════════════════════════════════
+   CONTACTS
+═══════════════════════════════════ */
+const contacts = [
+  { name:'Alex Reyes',     phone:'+63 912 345 6789', emoji:'👨', color:'rgba(66,133,244,0.25)' },
+  { name:'Ana Santos',     phone:'+63 917 234 5678', emoji:'👩', color:'rgba(255,100,150,0.25)' },
+  { name:'Bea Villanueva', phone:'+63 921 876 5432', emoji:'👱‍♀️', color:'rgba(180,60,255,0.25)' },
+  { name:'Carlo Dizon',    phone:'+63 908 123 4567', emoji:'🧑', color:'rgba(0,180,255,0.25)' },
+  { name:'Diana Cruz',     phone:'+63 939 987 6543', emoji:'👩‍💼', color:'rgba(255,160,0,0.25)' },
+  { name:'Eduardo Lim',    phone:'+63 995 567 8901', emoji:'👨‍💼', color:'rgba(0,200,130,0.25)' },
+  { name:'Fatima Ramos',   phone:'+63 906 654 3210', emoji:'🧕', color:'rgba(255,80,80,0.25)' },
+  { name:'Gabriel Torres', phone:'+63 918 432 1098', emoji:'👦', color:'rgba(100,200,255,0.25)' },
+  { name:'Hannah Flores',  phone:'+63 927 765 4321', emoji:'👧', color:'rgba(255,180,220,0.25)' },
+  { name:'Ivan Mendoza',   phone:'+63 945 321 6789', emoji:'🧔', color:'rgba(150,255,150,0.25)' },
+  { name:'Jasmine Aquino', phone:'+63 932 111 2222', emoji:'👩‍🦰', color:'rgba(255,220,100,0.25)' },
+  { name:'Kevin Bautista', phone:'+63 919 333 4444', emoji:'👨‍🦱', color:'rgba(200,150,255,0.25)' },
+  { name:'Lara Navarro',   phone:'+63 961 555 6666', emoji:'👩‍🦳', color:'rgba(0,230,200,0.25)' },
+  { name:'Marco Dela Cruz',phone:'+63 904 777 8888', emoji:'🧑‍💻', color:'rgba(255,120,0,0.25)' },
+  { name:'Nina Garcia',    phone:'+63 952 999 0000', emoji:'👩‍🎨', color:'rgba(220,0,180,0.2)' },
+  { name:'Bernard',  phone:'+63 933 481 2096', emoji:'🧑‍🦯', color:'rgba(0,180,120,0.25)' },
+];
+
+let dialTimerInterval = null;
+let dialSeconds = 0;
+let dialMuted = false;
+let dialSpeaker = false;
+
+function ctBuildList(list) {
+  const el = document.getElementById('ct-list');
+  el.innerHTML = '';
+  // Group by first letter
+  const groups = {};
+  list.forEach(c => {
+    const letter = c.name[0].toUpperCase();
+    if (!groups[letter]) groups[letter] = [];
+    groups[letter].push(c);
+  });
+  Object.keys(groups).sort().forEach(letter => {
+    const hdr = document.createElement('div');
+    hdr.className = 'ct-section-header';
+    hdr.textContent = letter;
+    el.appendChild(hdr);
+    groups[letter].forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'ct-row';
+      row.innerHTML = `
+        <div class="ct-avatar" style="background:${c.color}">${c.emoji}</div>
+        <div class="ct-info">
+          <div class="ct-name">${c.name}</div>
+          <div class="ct-phone">${c.phone}</div>
+        </div>
+        <button class="ct-call-btn" onclick="event.stopPropagation();startCall(${JSON.stringify(c)})">
+          <i class="fas fa-phone"></i>
+        </button>`;
+      row.onclick = () => startCall(c);
+      el.appendChild(row);
+    });
+  });
+}
+
+function ctToggleSearch() {
+  const bar = document.getElementById('ct-search-bar');
+  bar.classList.toggle('open');
+  if (bar.classList.contains('open')) document.getElementById('ct-search-input').focus();
+  else { document.getElementById('ct-search-input').value = ''; ctBuildList(contacts); }
+}
+
+function ctFilter(q) {
+  const filtered = q ? contacts.filter(c =>
+    c.name.toLowerCase().includes(q.toLowerCase()) ||
+    c.phone.includes(q)
+  ) : contacts;
+  ctBuildList(filtered);
+}
+
+function startCall(contact) {
+  const overlay = document.getElementById('dial-overlay');
+  document.getElementById('dial-avatar').textContent = contact.emoji;
+  document.getElementById('dial-avatar').style.background = contact.color || 'rgba(0,220,140,0.1)';
+  document.getElementById('dial-name').textContent = contact.name;
+  document.getElementById('dial-number').textContent = contact.phone;
+  document.getElementById('dial-status').textContent = 'Calling…';
+  document.getElementById('dial-timer').textContent = '';
+  document.getElementById('dial-avatar').classList.remove('connected');
+  dialMuted = false; dialSpeaker = false; dialSeconds = 0;
+  document.getElementById('dial-mute-btn').classList.remove('active-btn');
+  document.getElementById('dial-speaker-btn').classList.remove('active-btn');
+  overlay.classList.add('active');
+  // Simulate ringing → connected after 3s
+  clearInterval(dialTimerInterval);
+  setTimeout(() => {
+    if (!overlay.classList.contains('active')) return;
+    document.getElementById('dial-status').textContent = 'Connected';
+    document.getElementById('dial-avatar').classList.add('connected');
+    dialTimerInterval = setInterval(() => {
+      dialSeconds++;
+      const m = String(Math.floor(dialSeconds/60)).padStart(2,'0');
+      const s = String(dialSeconds%60).padStart(2,'0');
+      document.getElementById('dial-timer').textContent = m + ':' + s;
+    }, 1000);
+  }, 3000);
+}
+
+function endCall() {
+  clearInterval(dialTimerInterval);
+  dialTimerInterval = null;
+  document.getElementById('dial-overlay').classList.remove('active');
+}
+
+function dialToggleMute() {
+  dialMuted = !dialMuted;
+  document.getElementById('dial-mute-btn').classList.toggle('active-btn', dialMuted);
+}
+function dialToggleSpeaker() {
+  dialSpeaker = !dialSpeaker;
+  document.getElementById('dial-speaker-btn').classList.toggle('active-btn', dialSpeaker);
+}
+function dialOpenKeypad() {
+  showToast('📱 Keypad would open here');
 }
 
 /* ═══════════════════════════════════
