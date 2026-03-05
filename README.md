@@ -20,6 +20,26 @@ The central AI assistant accessible from the dock on the home screen. KAI unders
 
 ---
 
+### 💬 AI Chat (Gemini-Powered)
+
+In **Chat mode**, KAI goes beyond built-in commands. If your message isn't a recognized command, KAI automatically forwards it to **Google Gemini 2.5 Flash** and replies with a real AI-generated answer — all while staying in character as KAI.
+
+**How it works:**
+- Built-in commands always take priority (e.g. "send money", "open GCash")
+- Any unrecognized message in chat mode is sent to Gemini as a fallback
+- A animated `···` typing indicator appears while KAI is thinking
+- Gemini replies are displayed as KAI chat bubbles, not spoken aloud
+- Only available in **Chat mode** — Voice mode uses built-in commands only
+
+**What you can ask:**
+- General knowledge — *"What is the capital of Japan?"*
+- Practical questions — *"How do I boil an egg?"*
+- Math — *"What is 15% of 850?"*
+- Tagalog/Filipino questions — *"What does pagmamahal mean?"*
+- Anything conversational — *"Tell me a fun fact"*
+
+---
+
 ### 📱 Apps Included
 
 | App | Description |
@@ -215,7 +235,10 @@ KAI comes pre-loaded with the following contacts, all dialable by name:
 ```
 ├── index.html      — App structure, screens, and overlays
 ├── styles.css      — All styling (glassmorphism UI, app screens, dial overlay, chat UI)
-└── script.js       — All logic (KAI engine, guides, app simulations, contacts, dial)
+├── script.js       — All logic (KAI engine, guides, app simulations, contacts, dial)
+├── vercel.json     — Vercel deployment config
+└── api/
+    └── gemini.js   — Serverless function that proxies Gemini API (keeps API key secure)
 ```
 
 ---
