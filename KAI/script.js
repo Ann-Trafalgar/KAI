@@ -1681,7 +1681,7 @@ function takeCommand(msg, fromChat = false) {
     }
   }
   else if (is('hello')) {
-    respond("Hello! I'm KAI. Try saying 'send money', 'upload a photo', or 'react to a post'!");
+    respond("Hello! I'm KAI. How may I help you?");
   }
   else if (anyOtherLangMatch) {
     respond(wrongLangMsg[lang]);
