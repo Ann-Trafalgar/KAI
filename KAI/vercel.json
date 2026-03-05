@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/gemini.js": {
+      "runtime": "edge"
+    }
+  },
+  "routes": [
+    { "src": "/api/gemini", "dest": "/api/gemini.js" }
+  ]
+}
