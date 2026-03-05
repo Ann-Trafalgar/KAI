@@ -1687,8 +1687,46 @@ function takeCommand(msg, fromChat = false) {
     respond(wrongLangMsg[lang]);
   }
   else {
-    respond("I didn't catch that. Try: 'send money', 'open GCash', or 'upload a photo'.");
+    // In chat mode → ask Gemini as a fallback for general questions
+    if (fromChat) {
+      askGemini(msg);
+    } else {
+      respond("I didn't catch that. Try: 'send money', 'open GCash', or 'upload a photo'.");
+    }
   }
+}
+
+/* ═══════════════════════════════════
+   GEMINI AI FALLBACK (Chat Mode Only)
+═══════════════════════════════════ */
+async function askGemini(userMsg) {
+  setKaiStatus('THINKING...');
+
+  // Show a typing indicator bubble
+  const history = document.getElementById('kai-chat-history');
+  const typing = document.createElement('div');
+  typing.className = 'kai-chat-msg kai kai-typing';
+  typing.innerHTML = '<span class="kai-chat-label">K·A·I</span><span class="kai-typing-dots"><span>.</span><span>.</span><span>.</span></span>';
+  history.appendChild(typing);
+  history.scrollTop = history.scrollHeight;
+
+  try {
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userMsg })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    const reply = data.reply || "I'm not sure about that.";
+    typing.remove();
+    appendChatMsg(reply, 'kai');
+  } catch (err) {
+    typing.remove();
+    appendChatMsg("Sorry, I couldn't connect right now. Please try again.", 'kai');
+  }
+
+  setKaiStatus('READY');
 }
 
 /* ═══════════════════════════════════
