@@ -1,22 +1,21 @@
-export const config = { runtime: 'edge' };
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(req) {
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  let body;
-  try { body = await req.json(); } 
-  catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 }); }
-
-  const { message } = body;
+  const { message } = req.body || {};
   if (!message || typeof message !== 'string') {
-    return new Response(JSON.stringify({ error: 'Invalid message' }), { status: 400 });
+    return res.status(400).json({ error: 'Invalid message' });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'API key not configured' }), { status: 500 });
+    return res.status(500).json({ error: 'API key not configured' });
   }
 
   try {
@@ -28,7 +27,7 @@ export default async function handler(req) {
         body: JSON.stringify({
           system_instruction: {
             parts: [{
-              text: "You are KAI, a friendly and smart mobile assistant. Keep your answers concise, clear, and helpful. Do not use markdown formatting like bold or bullet points — reply in plain conversational sentences only."
+              text: "You are KAI, a friendly and smart mobile assistant. Keep answers concise and helpful. No markdown, no bullet points — plain sentences only."
             }]
           },
           contents: [{ parts: [{ text: message }] }]
@@ -36,20 +35,20 @@ export default async function handler(req) {
       }
     );
 
+    const data = await geminiRes.json();
+
     if (!geminiRes.ok) {
-      return new Response(JSON.stringify({ error: 'Gemini API error' }), { status: 502 });
+      console.error('Gemini error:', JSON.stringify(data));
+      return res.status(502).json({ error: 'Gemini API error', detail: data });
     }
 
-    const data = await geminiRes.json();
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "I'm not sure about that. Could you rephrase?";
 
-    return new Response(JSON.stringify({ reply }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch {
-    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
+    return res.status(200).json({ reply });
+  } catch (err) {
+    console.error('Handler error:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 }
