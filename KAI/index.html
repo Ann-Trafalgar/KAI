@@ -81,6 +81,10 @@
           <div class="app-icon-img ai-contacts">👥</div>
           <div class="app-icon-label">Contacts</div>
         </div>
+        <div class="app-icon" onclick="openApp('fitness')">
+          <div class="app-icon-img ai-fitness" id="home-fitness-icon">💪</div>
+          <div class="app-icon-label">Fitness</div>
+        </div>
       </div><!-- /app-grid -->
 
       <div class="home-dock">
@@ -261,7 +265,7 @@
             <div class="kai-settings-divider"></div>
             <div class="kai-childlock-info" id="kai-strictness-info">
               <i class="fas fa-info-circle"></i>
-              <span>When enabled, KAI will actively recommend the best product while shopping — based on highest sales and ratings.</span>
+              <span>When ON, KAI goes beyond guiding — it actively analyzes your data and gives personalized recommendations: best products while shopping, cheapest & fastest routes on Maps, and tailored fitness coaching based on your real stats (BMI, macros, workout frequency, sleep, recovery).</span>
             </div>
           </div>
         </div>
@@ -1201,6 +1205,400 @@
       </div>
 
     </div><!-- /#facebook-screen -->
+
+    <!-- ══ MAPS ══ -->
+    <div class="view" id="maps-screen">
+      <div class="maps-topbar">
+        <button class="maps-back-btn" onclick="goHome()">
+          <i class="fas fa-chevron-left"></i> HOME
+        </button>
+        <span class="maps-title"><i class="fas fa-map-marked-alt"></i> Maps</span>
+        <button class="maps-kai-btn" onclick="openApp('kai')" title="Ask KAI">🤖</button>
+      </div>
+
+      <div class="maps-search-wrap">
+        <div class="maps-search-bar">
+          <i class="fas fa-search maps-search-icon"></i>
+          <input class="maps-search-input" id="maps-search-input"
+            placeholder="Search destination…"
+            oninput="mapsOnInput(this.value)"
+            onkeydown="if(event.key==='Enter') mapsSearch()">
+          <button class="maps-search-clear" id="maps-search-clear" onclick="mapsClear()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <button class="maps-dir-btn" id="maps-dir-btn" onclick="mapsGetDirections()">
+          <i class="fas fa-directions"></i>
+        </button>
+      </div>
+
+      <div class="maps-mode-tabs" id="maps-mode-tabs">
+        <button class="maps-mode-tab active" id="maps-tab-driving" onclick="mapsSetMode('d')">
+          <i class="fas fa-car"></i> Drive
+        </button>
+        <button class="maps-mode-tab" id="maps-tab-transit" onclick="mapsSetMode('r')">
+          <i class="fas fa-bus"></i> Transit
+        </button>
+        <button class="maps-mode-tab" id="maps-tab-walking" onclick="mapsSetMode('w')">
+          <i class="fas fa-walking"></i> Walk
+        </button>
+      </div>
+
+      <div class="maps-iframe-wrap" id="maps-iframe-wrap">
+        <iframe id="maps-iframe"
+          src="https://maps.google.com/maps?q=Manila+Philippines&output=embed&hl=en"
+          frameborder="0"
+          allowfullscreen
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <div class="maps-loading" id="maps-loading">
+          <div class="maps-loading-spinner"></div>
+          <span>Loading map…</span>
+        </div>
+      </div>
+
+      <!-- Smart Suggestion Panel (only when Smart Suggestions is ON) -->
+      <div class="maps-smart-panel" id="maps-smart-panel">
+        <div class="maps-smart-header">
+          <div class="maps-smart-title">
+            <i class="fas fa-lightbulb"></i> KAI Smart Routes
+          </div>
+          <button class="maps-smart-close" onclick="mapsCloseSmartPanel()">
+            <i class="fas fa-chevron-down"></i>
+          </button>
+        </div>
+        <div class="maps-smart-dest" id="maps-smart-dest">Going to: —</div>
+        <div class="maps-smart-options" id="maps-smart-options"></div>
+        <div class="maps-smart-tip" id="maps-smart-tip"></div>
+      </div>
+    </div>
+
+    <!-- ══ FITNESS ══ -->
+    <div class="view" id="fitness-screen">
+      <!-- Topbar -->
+      <div class="fit-topbar">
+        <button class="fit-back-btn" onclick="goHome()"><i class="fas fa-chevron-left"></i> HOME</button>
+        <span class="fit-title">⚡ FITNESS</span>
+        <button class="fit-kai-btn" onclick="fitOpenKai()">🤖</button>
+      </div>
+
+      <!-- Tab Content Panels -->
+      <div class="fit-body" id="fit-body">
+
+        <!-- ── DASHBOARD ── -->
+        <div class="fit-tab-panel active" id="fit-panel-dashboard">
+          <div class="fit-scroll">
+            <!-- Greeting + date -->
+            <div class="fit-dash-greeting">
+              <div class="fit-dash-name" id="fit-dash-name">Today's Overview</div>
+              <div class="fit-dash-date" id="fit-dash-date"></div>
+            </div>
+
+            <!-- Activity rings -->
+            <div class="fit-rings-row" id="fit-rings-row">
+              <div class="fit-ring-wrap">
+                <svg class="fit-ring-svg" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="32" class="fit-ring-bg"/>
+                  <circle cx="40" cy="40" r="32" class="fit-ring-fill" id="fit-ring-cal" stroke="#ff6b6b" stroke-dasharray="0 201"/>
+                </svg>
+                <div class="fit-ring-center"><span class="fit-ring-val" id="fit-ring-cal-val">0</span><span class="fit-ring-unit">kcal</span></div>
+                <div class="fit-ring-label">Burned</div>
+              </div>
+              <div class="fit-ring-wrap">
+                <svg class="fit-ring-svg" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="32" class="fit-ring-bg"/>
+                  <circle cx="40" cy="40" r="32" class="fit-ring-fill" id="fit-ring-steps" stroke="#00e5ff" stroke-dasharray="0 201"/>
+                </svg>
+                <div class="fit-ring-center"><span class="fit-ring-val" id="fit-ring-steps-val">0</span><span class="fit-ring-unit">steps</span></div>
+                <div class="fit-ring-label">Steps</div>
+              </div>
+              <div class="fit-ring-wrap">
+                <svg class="fit-ring-svg" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="32" class="fit-ring-bg"/>
+                  <circle cx="40" cy="40" r="32" class="fit-ring-fill" id="fit-ring-active" stroke="#2ecc71" stroke-dasharray="0 201"/>
+                </svg>
+                <div class="fit-ring-center"><span class="fit-ring-val" id="fit-ring-active-val">0</span><span class="fit-ring-unit">min</span></div>
+                <div class="fit-ring-label">Active</div>
+              </div>
+            </div>
+
+            <!-- Vitals row -->
+            <div class="fit-vitals-row" id="fit-vitals-row">
+              <div class="fit-vital-card" id="fit-hr-card">
+                <i class="fas fa-heartbeat" style="color:#ff6b6b"></i>
+                <div class="fit-vital-val" id="fit-vital-hr">—</div>
+                <div class="fit-vital-label">Resting HR</div>
+              </div>
+              <div class="fit-vital-card">
+                <i class="fas fa-brain" style="color:#a29bfe"></i>
+                <div class="fit-vital-val" id="fit-vital-hrv">—</div>
+                <div class="fit-vital-label">HRV</div>
+              </div>
+              <div class="fit-vital-card">
+                <i class="fas fa-moon" style="color:#74b9ff"></i>
+                <div class="fit-vital-val" id="fit-vital-sleep">—</div>
+                <div class="fit-vital-label">Sleep</div>
+              </div>
+              <div class="fit-vital-card">
+                <i class="fas fa-tint" style="color:#00cec9"></i>
+                <div class="fit-vital-val" id="fit-vital-water">—</div>
+                <div class="fit-vital-label">Water</div>
+              </div>
+            </div>
+
+            <!-- HR Zones -->
+            <div class="fit-section-title">Heart Rate Zones</div>
+            <div class="fit-hz-list" id="fit-hz-list"></div>
+
+            <!-- Quick actions -->
+            <div class="fit-section-title">Quick Log</div>
+            <div class="fit-quick-row">
+              <button class="fit-quick-btn" onclick="fitOpenModal('modal-workout')"><i class="fas fa-dumbbell"></i> Workout</button>
+              <button class="fit-quick-btn" onclick="fitOpenModal('modal-weight')"><i class="fas fa-weight"></i> Weight</button>
+              <button class="fit-quick-btn" onclick="fitOpenModal('modal-water')"><i class="fas fa-tint"></i> Water</button>
+              <button class="fit-quick-btn" onclick="fitOpenModal('modal-sleep')"><i class="fas fa-bed"></i> Sleep</button>
+            </div>
+
+            <!-- KAI Smart tip (smart suggestions ON) -->
+            <div class="fit-smart-banner" id="fit-smart-banner" style="display:none">
+              <div class="fit-smart-banner-head"><i class="fas fa-robot"></i> KAI COACH</div>
+              <div class="fit-smart-banner-msg" id="fit-smart-banner-msg"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── WORKOUT ── -->
+        <div class="fit-tab-panel" id="fit-panel-workout">
+          <div class="fit-scroll">
+            <div class="fit-section-title" style="margin-top:8px">Log a Workout</div>
+            <div class="fit-wk-form">
+              <div class="fit-form-row">
+                <label class="fit-form-label">Type</label>
+                <select class="fit-select" id="fit-wk-type">
+                  <option value="strength">🏋️ Strength Training</option>
+                  <option value="cardio">🏃 Cardio</option>
+                  <option value="hiit">⚡ HIIT</option>
+                  <option value="yoga">🧘 Yoga / Stretching</option>
+                  <option value="cycling">🚴 Cycling</option>
+                  <option value="swimming">🏊 Swimming</option>
+                  <option value="sports">⚽ Sports</option>
+                </select>
+              </div>
+              <div class="fit-form-row">
+                <label class="fit-form-label">Duration (min)</label>
+                <input class="fit-input" type="number" id="fit-wk-duration" value="45" min="1" max="300">
+              </div>
+              <div class="fit-form-row">
+                <label class="fit-form-label">Intensity</label>
+                <div class="fit-intensity-row" id="fit-intensity-row">
+                  <button class="fit-int-btn active" data-val="low" onclick="fitSetIntensity('low',this)">Low</button>
+                  <button class="fit-int-btn" data-val="moderate" onclick="fitSetIntensity('moderate',this)">Moderate</button>
+                  <button class="fit-int-btn" data-val="high" onclick="fitSetIntensity('high',this)">High</button>
+                </div>
+              </div>
+              <div class="fit-form-row">
+                <label class="fit-form-label">Notes</label>
+                <input class="fit-input" type="text" id="fit-wk-notes" placeholder="e.g. Bench 3x8 @ 60kg…">
+              </div>
+              <button class="fit-save-btn" onclick="fitLogWorkout()"><i class="fas fa-plus"></i> Log Workout</button>
+            </div>
+
+            <!-- Workout History -->
+            <div class="fit-section-title" id="fit-wk-hist-title">Recent Workouts</div>
+            <div id="fit-wk-history"></div>
+
+            <!-- 1RM Calculator -->
+            <div class="fit-section-title">1RM Calculator</div>
+            <div class="fit-calc-card">
+              <div class="fit-form-row">
+                <label class="fit-form-label">Weight lifted (kg)</label>
+                <input class="fit-input" type="number" id="fit-1rm-weight" value="80" min="1">
+              </div>
+              <div class="fit-form-row">
+                <label class="fit-form-label">Reps performed</label>
+                <input class="fit-input" type="number" id="fit-1rm-reps" value="5" min="1" max="30">
+              </div>
+              <button class="fit-calc-btn" onclick="fitCalc1RM()"><i class="fas fa-calculator"></i> Calculate</button>
+              <div class="fit-calc-result" id="fit-1rm-result"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── BODY ── -->
+        <div class="fit-tab-panel" id="fit-panel-body">
+          <div class="fit-scroll">
+            <!-- Profile setup -->
+            <div class="fit-section-title" style="margin-top:8px">My Profile</div>
+            <div class="fit-body-profile">
+              <div class="fit-form-row"><label class="fit-form-label">Age</label><input class="fit-input fit-input-sm" type="number" id="fit-p-age" value="22" min="10" max="99"></div>
+              <div class="fit-form-row"><label class="fit-form-label">Height (cm)</label><input class="fit-input fit-input-sm" type="number" id="fit-p-height" value="170" min="100" max="250"></div>
+              <div class="fit-form-row"><label class="fit-form-label">Weight (kg)</label><input class="fit-input fit-input-sm" type="number" id="fit-p-weight" value="68" min="20" max="300" oninput="fitUpdateBodyStats()"></div>
+              <div class="fit-form-row">
+                <label class="fit-form-label">Gender</label>
+                <div class="fit-gender-row">
+                  <button class="fit-int-btn active" id="fit-gender-male" onclick="fitSetGender('male',this)">Male</button>
+                  <button class="fit-int-btn" id="fit-gender-female" onclick="fitSetGender('female',this)">Female</button>
+                </div>
+              </div>
+              <div class="fit-form-row">
+                <label class="fit-form-label">Goal</label>
+                <select class="fit-select" id="fit-p-goal">
+                  <option value="cut">🔥 Cut (Lose Fat)</option>
+                  <option value="muscle" selected>💪 Build Muscle</option>
+                  <option value="maintain">⚖️ Maintain</option>
+                  <option value="endurance">🏃 Endurance</option>
+                </select>
+              </div>
+              <div class="fit-form-row">
+                <label class="fit-form-label">Activity</label>
+                <select class="fit-select" id="fit-p-activity">
+                  <option value="sedentary">🛋️ Sedentary</option>
+                  <option value="light">🚶 Lightly Active</option>
+                  <option value="moderate" selected>🏃 Moderately Active</option>
+                  <option value="active">⚡ Very Active</option>
+                  <option value="extreme">🔥 Extremely Active</option>
+                </select>
+              </div>
+              <button class="fit-save-btn" onclick="fitUpdateBodyStats()"><i class="fas fa-sync"></i> Update Stats</button>
+            </div>
+
+            <!-- Computed stats -->
+            <div class="fit-section-title">Computed Metrics</div>
+            <div class="fit-metrics-grid" id="fit-metrics-grid"></div>
+
+            <!-- Body fat (Navy method) -->
+            <div class="fit-section-title">Body Fat % — Navy Method</div>
+            <div class="fit-calc-card">
+              <div class="fit-form-row"><label class="fit-form-label">Waist (cm)</label><input class="fit-input" type="number" id="fit-bf-waist" value="80"></div>
+              <div class="fit-form-row"><label class="fit-form-label">Neck (cm)</label><input class="fit-input" type="number" id="fit-bf-neck" value="37"></div>
+              <div class="fit-form-row fit-bf-hip-row" id="fit-bf-hip-row"><label class="fit-form-label">Hip (cm)</label><input class="fit-input" type="number" id="fit-bf-hip" value="95"></div>
+              <button class="fit-calc-btn" onclick="fitCalcBodyFat()"><i class="fas fa-calculator"></i> Calculate</button>
+              <div class="fit-calc-result" id="fit-bf-result"></div>
+            </div>
+
+            <!-- Weight history chart -->
+            <div class="fit-section-title">Weight History</div>
+            <div class="fit-weight-chart" id="fit-weight-chart"></div>
+            <button class="fit-save-btn" style="margin:0 0 12px" onclick="fitOpenModal('modal-weight')"><i class="fas fa-plus"></i> Log Weight</button>
+          </div>
+        </div>
+
+        <!-- ── NUTRITION ── -->
+        <div class="fit-tab-panel" id="fit-panel-nutrition">
+          <div class="fit-scroll">
+            <div class="fit-section-title" style="margin-top:8px">Today's Macros</div>
+
+            <!-- Calorie balance bar -->
+            <div class="fit-cal-balance" id="fit-cal-balance"></div>
+
+            <!-- Macro bars -->
+            <div class="fit-macro-bars" id="fit-macro-bars"></div>
+
+            <!-- Log nutrition -->
+            <div class="fit-section-title">Log Nutrition</div>
+            <div class="fit-calc-card">
+              <div class="fit-form-row"><label class="fit-form-label">Calories (kcal)</label><input class="fit-input" type="number" id="fit-n-cal" value="500" min="0"></div>
+              <div class="fit-form-row"><label class="fit-form-label">Protein (g)</label><input class="fit-input" type="number" id="fit-n-protein" value="35" min="0"></div>
+              <div class="fit-form-row"><label class="fit-form-label">Carbs (g)</label><input class="fit-input" type="number" id="fit-n-carbs" value="60" min="0"></div>
+              <div class="fit-form-row"><label class="fit-form-label">Fat (g)</label><input class="fit-input" type="number" id="fit-n-fat" value="15" min="0"></div>
+              <div class="fit-form-row"><label class="fit-form-label">Fiber (g)</label><input class="fit-input" type="number" id="fit-n-fiber" value="8" min="0"></div>
+              <button class="fit-save-btn" onclick="fitLogNutrition()"><i class="fas fa-plus"></i> Add Meal</button>
+            </div>
+
+            <!-- Water tracker -->
+            <div class="fit-section-title">Water Intake</div>
+            <div class="fit-water-tracker" id="fit-water-tracker"></div>
+
+            <!-- TDEE / BMR panel -->
+            <div class="fit-section-title">Energy Needs</div>
+            <div class="fit-energy-panel" id="fit-energy-panel"></div>
+          </div>
+        </div>
+
+        <!-- ── STATS ── -->
+        <div class="fit-tab-panel" id="fit-panel-stats">
+          <div class="fit-scroll">
+            <div class="fit-section-title" style="margin-top:8px">Performance Stats</div>
+            <div class="fit-perf-grid" id="fit-perf-grid"></div>
+
+            <div class="fit-section-title">Weekly Volume</div>
+            <div class="fit-vol-chart" id="fit-vol-chart"></div>
+
+            <div class="fit-section-title">VO₂ Max Estimate</div>
+            <div class="fit-vo2-card" id="fit-vo2-card"></div>
+
+            <div class="fit-section-title">Personal Records</div>
+            <div class="fit-pr-list" id="fit-pr-list"></div>
+
+            <div class="fit-section-title">Recovery Score</div>
+            <div class="fit-recovery-card" id="fit-recovery-card"></div>
+          </div>
+        </div>
+
+      </div><!-- /fit-body -->
+
+      <!-- Bottom Tab Nav -->
+      <div class="fit-tab-nav">
+        <button class="fit-nav-btn active" id="fit-nav-dashboard" onclick="fitSetTab('dashboard')">
+          <i class="fas fa-th-large"></i><span>Dash</span>
+        </button>
+        <button class="fit-nav-btn" id="fit-nav-workout" onclick="fitSetTab('workout')">
+          <i class="fas fa-dumbbell"></i><span>Workout</span>
+        </button>
+        <button class="fit-nav-btn" id="fit-nav-body" onclick="fitSetTab('body')">
+          <i class="fas fa-user-circle"></i><span>Body</span>
+        </button>
+        <button class="fit-nav-btn" id="fit-nav-nutrition" onclick="fitSetTab('nutrition')">
+          <i class="fas fa-apple-alt"></i><span>Nutrition</span>
+        </button>
+        <button class="fit-nav-btn" id="fit-nav-stats" onclick="fitSetTab('stats')">
+          <i class="fas fa-chart-line"></i><span>Stats</span>
+        </button>
+      </div>
+
+      <!-- ── MODALS ── -->
+      <div class="fit-modal-overlay" id="fit-modal-overlay" onclick="fitCloseModal()"></div>
+
+      <!-- Log Workout Modal -->
+      <div class="fit-modal" id="modal-workout">
+        <div class="fit-modal-head"><span>Log Workout</span><button onclick="fitCloseModal()"><i class="fas fa-times"></i></button></div>
+        <p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px">Fill details in the Workout tab, then tap Log.</p>
+        <button class="fit-save-btn" onclick="fitCloseModal();fitSetTab('workout')">Go to Workout Tab →</button>
+      </div>
+
+      <!-- Log Weight Modal -->
+      <div class="fit-modal" id="modal-weight">
+        <div class="fit-modal-head"><span>Log Weight</span><button onclick="fitCloseModal()"><i class="fas fa-times"></i></button></div>
+        <div class="fit-form-row"><label class="fit-form-label">Weight (kg)</label><input class="fit-input" type="number" id="modal-weight-val" value="68" step="0.1"></div>
+        <div class="fit-form-row"><label class="fit-form-label">Date</label><input class="fit-input" type="date" id="modal-weight-date"></div>
+        <button class="fit-save-btn" onclick="fitSaveWeight()"><i class="fas fa-save"></i> Save</button>
+      </div>
+
+      <!-- Log Water Modal -->
+      <div class="fit-modal" id="modal-water">
+        <div class="fit-modal-head"><span>Log Water</span><button onclick="fitCloseModal()"><i class="fas fa-times"></i></button></div>
+        <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px">How many glasses did you drink?</p>
+        <div class="fit-water-btns" id="modal-water-btns"></div>
+        <button class="fit-save-btn" onclick="fitSaveWater()"><i class="fas fa-tint"></i> Save</button>
+      </div>
+
+      <!-- Log Sleep Modal -->
+      <div class="fit-modal" id="modal-sleep">
+        <div class="fit-modal-head"><span>Log Sleep</span><button onclick="fitCloseModal()"><i class="fas fa-times"></i></button></div>
+        <div class="fit-form-row"><label class="fit-form-label">Hours slept</label><input class="fit-input" type="number" id="modal-sleep-hrs" value="7.5" step="0.5" min="0" max="24"></div>
+        <div class="fit-form-row">
+          <label class="fit-form-label">Quality</label>
+          <div class="fit-intensity-row">
+            <button class="fit-int-btn" data-val="poor" onclick="fitSetSleepQ('poor',this)">Poor</button>
+            <button class="fit-int-btn active" data-val="fair" onclick="fitSetSleepQ('fair',this)">Fair</button>
+            <button class="fit-int-btn" data-val="good" onclick="fitSetSleepQ('good',this)">Good</button>
+            <button class="fit-int-btn" data-val="great" onclick="fitSetSleepQ('great',this)">Great</button>
+          </div>
+        </div>
+        <button class="fit-save-btn" onclick="fitSaveSleep()"><i class="fas fa-save"></i> Save</button>
+      </div>
+
+    </div><!-- /#fitness-screen -->
 
     <!-- HOME BAR -->
     <div class="home-indicator" onclick="stopGuide();goHome();"></div>

@@ -126,6 +126,8 @@ function openApp(name) {
   if (name === 'facebook')   { showView('facebook-screen'); fbShowSub('fb-home'); return; }
   if (name === 'shopee')     { showView('shopee-screen'); spShowSub('sp-home'); spBuildHome(); return; }
   if (name === 'contacts')   { showView('contacts-screen'); ctBuildList(contacts); return; }
+  if (name === 'maps')       { showView('maps-screen'); return; }
+  if (name === 'fitness')    { showView('fitness-screen'); setTimeout(fitInit, 80); return; }
   const cfg = appConfig[name]; if (!cfg) return;
   externalUrl = cfg.url;
   document.getElementById('external-title').textContent   = cfg.title;
@@ -144,7 +146,7 @@ function gcashShowSub(id) {
   document.getElementById(id).classList.add('active');
 }
 function gcashGoSend()  { gcashShowSub('gcash-send-step1'); }
-function gcashGoHome()  { gcashShowSub('gcash-home'); }
+function gcashGoHome()  { gcashShowSub('gcash-home'); qrPinVal = ''; updateQrPinDots(); }
 function gcashBack(to)  { gcashShowSub(to); }
 
 function gcashGoStep2() {
@@ -870,11 +872,6 @@ function updateQrPinDots() {
   for (let i = 0; i < 4; i++)
     document.getElementById('qpd'+i).classList.toggle('filled', i < qrPinVal.length);
 }
-function gcashGoHome() {
-  gcashShowSub('gcash-home');
-  qrPinVal = '';
-  updateQrPinDots();
-}
 
 /* ── Receive Money (QR Activation) Guide Flow ── */
 const receiveMoneyFlow = [
@@ -1093,7 +1090,7 @@ function positionGuideOn(step, token) {
   const okBtn      = document.getElementById('guide-ok-btn');
 
   const target = document.getElementById(step.targetId);
-  if (!target) return;
+  if (!target) { stopGuide(); return; } // safety: never leave overlay blocking UI
 
   // Call onShow before positioning (scrolls to top etc.)
   if (step.onShow) step.onShow();
@@ -1145,7 +1142,7 @@ function positionGuideOn(step, token) {
 function _drawGuide(step, overlay, ring, bubble, canvas, msgEl, badgeEl, tapHintEl, okBtn, token) {
   if (!guideActive || (token !== undefined && guideRenderToken !== token)) return;
   const target = document.getElementById(step.targetId);
-  if (!target) return;
+  if (!target) { stopGuide(); return; }
 
   overlay.classList.add('active');
 
@@ -1393,8 +1390,8 @@ function toggleStrictness() {
   kaiSettings.strictness = !kaiSettings.strictness;
   renderSettingsState();
   const msg = kaiSettings.strictness
-    ? "Smart Suggestions is ON. When you shop, I'll recommend the best product based on ratings and sales."
-    : "Smart Suggestions is OFF. I'll guide you through tasks without extra suggestions.";
+    ? "Smart Suggestions is ON. I'll now give you personalized coaching — best products while shopping, cheapest routes on Maps, and fitness insights based on your real data."
+    : "Smart Suggestions is OFF. I'll guide you through tasks without extra analysis.";
   showToast(kaiSettings.strictness ? '💡 Smart Suggestions ON' : '💡 Smart Suggestions OFF');
   speak(msg);
 }
@@ -1419,10 +1416,10 @@ function renderSettingsState() {
   const stDesc   = document.getElementById('strictness-desc');
   if (kaiSettings.strictness) {
     stToggle?.classList.add('on');
-    if (stDesc) stDesc.textContent = 'KAI picks the best product for you';
+    if (stDesc) stDesc.textContent = 'KAI coaches: fitness, routes & shopping';
   } else {
     stToggle?.classList.remove('on');
-    if (stDesc) stDesc.textContent = 'KAI guides without extra suggestions';
+    if (stDesc) stDesc.textContent = 'KAI guides without extra analysis';
   }
 
   // Language buttons
@@ -1585,6 +1582,66 @@ function takeCommand(msg, fromChat = false) {
       tagalog:  ['buksan ang contacts','contacts'],
     },
 
+    openMaps: {
+      english: ['open maps','open map','maps app'],
+      taglish:  ['buksan ang maps','buksan ang mapa','maps'],
+      tagalog:  ['buksan ang mapa','mapa'],
+    },
+
+    openFitness: {
+      english: ['open fitness','fitness app','open fit','my fitness'],
+      taglish:  ['buksan ang fitness','fitness app','buksan ang fit'],
+      tagalog:  ['buksan ang fitness','fitness'],
+    },
+
+    logWorkout: {
+      english: ['log workout','log my workout','add workout','record workout','i worked out','i exercised','log exercise'],
+      taglish:  ['mag-log ng workout','i-log ang workout','nag-workout na ako','nag-ehersisyo'],
+      tagalog:  ['i-log ang ehersisyo','nag-ehersisyo ako','i-record ang workout'],
+    },
+
+    logWeight: {
+      english: ['log weight','log my weight','i weigh','my weight is','update weight'],
+      taglish:  ['i-log ang timbang','ang timbang ko','mag-log ng weight'],
+      tagalog:  ['i-log ang timbang ko','ang bigat ko'],
+    },
+
+    logWater: {
+      english: ['log water','drank water','log my water','water intake','update water'],
+      taglish:  ['i-log ang tubig','uminom ng tubig','mag-log ng water'],
+      tagalog:  ['i-log ang tubig','uminom ako ng tubig'],
+    },
+
+    fitnessStats: {
+      english: ['fitness stats','my stats','show my stats','check my stats','my bmi','my tdee','my bmr','body stats','fitness data'],
+      taglish:  ['fitness stats','aking stats','aking bmi','aking tdee','body stats'],
+      tagalog:  ['fitness stats','mga stats ko','aking bmi','aking tdee'],
+    },
+
+    fitnessProgress: {
+      english: ['my progress','show progress','fitness progress','workout history','my history'],
+      taglish:  ['aking progress','show progress','workout history'],
+      tagalog:  ['aking pag-unlad','kasaysayan ng workout'],
+    },
+
+    fitnessNutrition: {
+      english: ['log nutrition','log meal','add meal','nutrition','my macros','log food','calorie intake'],
+      taglish:  ['i-log ang pagkain','macros ko','calorie ko','log meal'],
+      tagalog:  ['i-log ang pagkain','mga macros ko'],
+    },
+
+    fitnessDashboard: {
+      english: ['fitness dashboard','dashboard','today fitness','daily overview'],
+      taglish:  ['fitness dashboard','overview ngayon'],
+      tagalog:  ['fitness dashboard'],
+    },
+
+    navigateTo: {
+      english: ['how to go to','directions to','navigate to','take me to','go to','how do i get to','route to','find route'],
+      taglish:  ['paano pumunta sa','paano makarating sa','directions to','navigate to','saan ang','hanapin ang daan papunta sa','go to'],
+      tagalog:  ['paano pumunta sa','paano makarating sa','hanapin ang daan papunta sa','direksyon papunta sa','saan naroon ang'],
+    },
+
     dialContact: {
       english: ['call','dial','contact','phone'],
       taglish:  ['tawagan','i-call','i-dial','tumawag'],
@@ -1660,6 +1717,86 @@ function takeCommand(msg, fromChat = false) {
   else if (is('settings')) respond("Opening KAI Settings!", () => openKaiSettings());
   else if (is('goHome'))   respond("Going home.", goHome);
   else if (is('openContacts')) respond("Opening Contacts!", () => openApp('contacts'));
+  else if (is('openMaps')) respond("Opening Maps!", () => openApp('maps'));
+  else if (is('openFitness')) respond("Opening your Fitness app!", () => openApp('fitness'));
+  else if (is('fitnessDashboard')) {
+    respond("Opening your fitness dashboard!", () => {
+      openApp('fitness');
+      setTimeout(() => fitSetTab('dashboard'), 300);
+      if (kaiSettings.strictness) setTimeout(() => startGuide(fitDashboardFlow), 500);
+    });
+  }
+  else if (is('logWorkout')) {
+    respond(kaiSettings.strictness
+      ? "Let me guide you through logging your workout with smart intensity tips!"
+      : "Sure! I'll guide you to log your workout step by step.",
+      () => startGuide(fitWorkoutFlow));
+  }
+  else if (is('logWeight')) {
+    // Try to extract weight number
+    const numMatch = msg.match(/(\d+\.?\d*)\s*(kg|kilo|kilos)?/);
+    const wVal = numMatch ? parseFloat(numMatch[1]) : null;
+    respond(wVal ? `Logging your weight as ${wVal} kg!` : "Opening the weight log!", () => {
+      openApp('fitness');
+      setTimeout(() => {
+        fitSetTab('body');
+        fitOpenModal('modal-weight');
+        if (wVal) { const el = document.getElementById('modal-weight-val'); if (el) el.value = wVal; }
+      }, 400);
+    });
+  }
+  else if (is('logWater')) {
+    respond("Opening water tracker to log your intake!", () => {
+      openApp('fitness');
+      setTimeout(() => fitOpenModal('modal-water'), 400);
+    });
+  }
+  else if (is('fitnessStats')) {
+    respond(kaiSettings.strictness
+      ? "Pulling up your body stats with KAI analysis!"
+      : "Opening your body stats!",
+      () => startGuide(fitBodyStatsFlow));
+  }
+  else if (is('fitnessNutrition')) {
+    respond(kaiSettings.strictness
+      ? "Let's check your macros and caloric balance — I'll highlight what needs attention!"
+      : "Opening nutrition tracker!",
+      () => startGuide(fitNutritionFlow));
+  }
+  else if (is('fitnessProgress')) {
+    respond("Opening your fitness progress and workout history!", () => {
+      openApp('fitness');
+      setTimeout(() => fitSetTab('stats'), 400);
+    });
+  }
+  else if (is('navigateTo')) {
+    const stripPhrases = [
+      'how to go to','directions to','navigate to','take me to','how do i get to',
+      'route to','find route to','paano pumunta sa','paano makarating sa',
+      'hanapin ang daan papunta sa','direksyon papunta sa','saan naroon ang',
+      'go to','saan ang',
+    ];
+    let dest = msg;
+    stripPhrases.forEach(w => {
+      dest = dest.replace(new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), '');
+    });
+    dest = dest.trim();
+    if (!dest) {
+      respond("Where would you like to go? Try saying 'how to go to Morayta' or 'navigate to Ayala'.");
+      return;
+    }
+    if (kaiSettings.strictness) {
+      respond(`Opening Maps for ${dest}! I'll show the route AND suggest the cheapest, traffic-free transport. 🗺️`, () => {
+        mapsNavigateTo(dest);
+        setTimeout(() => startGuide(mapsNavGuide(dest)), 1300);
+      });
+    } else {
+      respond(`Sure! Opening Maps and finding directions to ${dest}. I'll guide you!`, () => {
+        mapsNavigateTo(dest);
+        setTimeout(() => startGuide(mapsNavGuide(dest)), 1300);
+      });
+    }
+  }
   else if (is('dialContact')) {
     // Extract name from message by stripping trigger words
     const stripWords = ['call','dial','contact','phone','tawagan','i-call','i-dial','tumawag','tumawag kay','tawagan','please','pls','can you','si'];
@@ -1728,6 +1865,606 @@ async function askGemini(userMsg) {
 
   setKaiStatus('READY');
 }
+
+
+/* ═══════════════════════════════════
+   FITNESS APP
+═══════════════════════════════════ */
+
+// ── State ──────────────────────────
+let fitnessData = {
+  profile: { age: 22, heightCm: 170, weightKg: 68, gender: 'male', goal: 'muscle', activity: 'moderate' },
+  today: { steps: 7840, caloriesBurned: 420, activeMin: 52, waterGlasses: 6 },
+  vitals: { restingHR: 63, hrv: 44, sleepHrs: 7.5, sleepQuality: 'good' },
+  workouts: [
+    { date: 'Mon', type: 'strength', icon: '🏋️', duration: 55, intensity: 'high',   kcal: 380, notes: 'Chest & Triceps — Bench 3x8@80kg' },
+    { date: 'Tue', type: 'cardio',   icon: '🏃', duration: 30, intensity: 'moderate',kcal: 260, notes: 'Treadmill 5km' },
+    { date: 'Thu', type: 'hiit',     icon: '⚡', duration: 25, intensity: 'high',   kcal: 310, notes: 'Tabata core circuit' },
+    { date: 'Sat', type: 'strength', icon: '🏋️', duration: 60, intensity: 'high',   kcal: 420, notes: 'Back & Biceps — Deadlift 3x5@100kg' },
+  ],
+  weightLog: [
+    { date: '02/10', kg: 69.2 },
+    { date: '02/17', kg: 68.8 },
+    { date: '02/24', kg: 68.5 },
+    { date: '03/03', kg: 68.1 },
+    { date: '03/09', kg: 67.8 },
+  ],
+  nutrition: { calories: 1850, protein: 148, carbs: 210, fat: 52, fiber: 28, target: { calories: 2200, protein: 170, carbs: 240, fat: 60, fiber: 35 } },
+  prs: [
+    { name: 'Bench Press', val: '100 kg × 1' },
+    { name: 'Squat',       val: '120 kg × 1' },
+    { name: 'Deadlift',    val: '140 kg × 1' },
+    { name: '5km Run',     val: '24:10 min' },
+  ],
+};
+let fitCurrentTab = 'dashboard';
+let fitWorkoutIntensity = 'low';
+let fitSleepQuality = 'fair';
+let fitWaterModal = 6;
+let fitGender = 'male';
+
+// ── Open / Init ────────────────────
+function fitInit() {
+  fitRenderDashboard();
+  fitRenderWorkoutHistory();
+  fitUpdateBodyStats();
+  fitRenderNutrition();
+  fitRenderStats();
+  fitSetTab('dashboard');
+  // Set today's date
+  const el = document.getElementById('fit-dash-date');
+  if (el) el.textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' }).toUpperCase();
+  // Pre-set modal date
+  const dateEl = document.getElementById('modal-weight-date');
+  if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+  // Build water modal buttons
+  const bEl = document.getElementById('modal-water-btns');
+  if (bEl) {
+    bEl.innerHTML = [1,2,3,4,5,6,7,8,9,10,11,12].map(n =>
+      `<button class="fit-water-num-btn ${n===fitWaterModal?'selected':''}" onclick="fitSelectWater(${n},this)">${n}</button>`
+    ).join('');
+  }
+  // Show smart banner if enabled
+  if (kaiSettings.strictness) fitShowSmartBanner();
+}
+
+function fitOpenKai() { openApp('kai'); }
+
+// ── Tab system ─────────────────────
+function fitSetTab(tab) {
+  fitCurrentTab = tab;
+  document.querySelectorAll('.fit-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.fit-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('fit-panel-' + tab)?.classList.add('active');
+  document.getElementById('fit-nav-' + tab)?.classList.add('active');
+}
+
+// ── Dashboard ──────────────────────
+function fitRenderDashboard() {
+  const d = fitnessData.today;
+  // Rings
+  fitAnimateRing('fit-ring-cal',   'fit-ring-cal-val',    d.caloriesBurned, 600, d.caloriesBurned);
+  fitAnimateRing('fit-ring-steps', 'fit-ring-steps-val',  d.steps,          10000, d.steps);
+  fitAnimateRing('fit-ring-active','fit-ring-active-val', d.activeMin,      60, d.activeMin);
+
+  // Vitals
+  const v = fitnessData.vitals;
+  document.getElementById('fit-vital-hr').textContent    = v.restingHR + ' bpm';
+  document.getElementById('fit-vital-hrv').textContent   = v.hrv + ' ms';
+  document.getElementById('fit-vital-sleep').textContent = v.sleepHrs + ' h';
+  document.getElementById('fit-vital-water').textContent = d.waterGlasses + '/8 gl';
+
+  // HR zones based on age
+  const p = fitnessData.profile;
+  const maxHR = 220 - p.age;
+  const zones = [
+    { name:'Zone 1 – Recovery',  pct:[50,60], color:'#74b9ff' },
+    { name:'Zone 2 – Fat Burn',  pct:[60,70], color:'#00b894' },
+    { name:'Zone 3 – Aerobic',   pct:[70,80], color:'#f9ca24' },
+    { name:'Zone 4 – Threshold', pct:[80,90], color:'#e17055' },
+    { name:'Zone 5 – VO₂ Max',   pct:[90,100],color:'#d63031' },
+  ];
+  const hzList = document.getElementById('fit-hz-list');
+  if (hzList) {
+    hzList.innerHTML = zones.map(z => {
+      const lo = Math.round(maxHR * z.pct[0] / 100);
+      const hi = Math.round(maxHR * z.pct[1] / 100);
+      const barW = (z.pct[1] - z.pct[0]) * 2; // visual width
+      return `<div class="fit-hz-item">
+        <div class="fit-hz-dot" style="background:${z.color}"></div>
+        <div class="fit-hz-name">${z.name}</div>
+        <div class="fit-hz-bar-wrap"><div class="fit-hz-bar" style="width:${barW}%;background:${z.color}"></div></div>
+        <div class="fit-hz-range">${lo}–${hi}</div>
+      </div>`;
+    }).join('');
+  }
+
+  if (kaiSettings.strictness) fitShowSmartBanner();
+}
+
+function fitAnimateRing(ringId, valId, value, max, display) {
+  const circ = 201; // 2π × 32
+  const pct = Math.min(value / max, 1);
+  const el = document.getElementById(ringId);
+  const vEl = document.getElementById(valId);
+  if (el) setTimeout(() => { el.style.strokeDasharray = `${pct * circ} ${circ}`; }, 200);
+  if (vEl) vEl.textContent = display >= 1000 ? (display/1000).toFixed(1)+'k' : display;
+}
+
+// ── Smart Banner ───────────────────
+function fitShowSmartBanner() {
+  const banner = document.getElementById('fit-smart-banner');
+  const msg    = document.getElementById('fit-smart-banner-msg');
+  if (!banner || !msg) return;
+  banner.style.display = 'block';
+  msg.innerHTML = fitGenerateSmartCoaching().join('<br>');
+}
+
+function fitGenerateSmartCoaching() {
+  const p = fitnessData.profile;
+  const n = fitnessData.nutrition;
+  const v = fitnessData.vitals;
+  const tips = [];
+  const bmi = p.weightKg / Math.pow(p.heightCm / 100, 2);
+  const bmr = p.gender === 'male'
+    ? 10 * p.weightKg + 6.25 * p.heightCm - 5 * p.age + 5
+    : 10 * p.weightKg + 6.25 * p.heightCm - 5 * p.age - 161;
+  const actMult = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, extreme:1.9 };
+  const tdee = Math.round(bmr * (actMult[p.activity] || 1.55));
+  const protTarget = Math.round(p.weightKg * 2.2);
+  const deficit = tdee - n.calories;
+
+  // BMI check
+  if (bmi < 18.5) tips.push(`⚠️ BMI ${bmi.toFixed(1)} — Underweight. Aim to eat in a ~300 kcal surplus daily.`);
+  else if (bmi < 25) tips.push(`✅ BMI ${bmi.toFixed(1)} — Healthy range. Keep it up!`);
+  else if (bmi < 30) tips.push(`⚠️ BMI ${bmi.toFixed(1)} — Slightly overweight. Target a ~300–500 kcal deficit.`);
+  else tips.push(`🔴 BMI ${bmi.toFixed(1)} — Obese range. Prioritize cardio 3–4×/week + caloric deficit.`);
+
+  // Caloric balance
+  if (Math.abs(deficit) < 100) tips.push(`⚖️ You're eating at maintenance (${n.calories} vs TDEE ${tdee} kcal). Perfect for recomp.`);
+  else if (deficit > 0) tips.push(`🔥 Deficit of ${deficit} kcal today — good for fat loss${deficit > 700 ? ', but don\'t go below 500 consistently' : ''}!`);
+  else tips.push(`💪 Surplus of ${Math.abs(deficit)} kcal — good for muscle gain${Math.abs(deficit) > 600 ? ', consider trimming fat intake' : ''}!`);
+
+  // Protein
+  if (n.protein < protTarget * 0.8) tips.push(`🥩 Protein ${n.protein}g — too low for muscle gain. Target ${protTarget}g (2.2×BW).`);
+  else if (n.protein >= protTarget) tips.push(`💪 Protein ${n.protein}g — on target! Muscle synthesis is supported.`);
+
+  // Water
+  if (fitnessData.today.waterGlasses < 6) tips.push(`💧 Only ${fitnessData.today.waterGlasses} glasses today — aim for 8+.`);
+
+  // Sleep
+  if (v.sleepHrs < 7) tips.push(`😴 ${v.sleepHrs}h sleep — under the 7–9h target. Poor sleep raises cortisol & kills gains.`);
+  else if (v.sleepHrs >= 8) tips.push(`😴 ${v.sleepHrs}h sleep — excellent recovery!`);
+
+  // Workout frequency
+  const recent = fitnessData.workouts.length;
+  if (recent < 3) tips.push(`📅 Only ${recent} workouts logged this week. Target 4–5 sessions for optimal progress.`);
+
+  return tips.slice(0, 4); // max 4 tips
+}
+
+// ── Workout ────────────────────────
+function fitSetIntensity(val, btn) {
+  fitWorkoutIntensity = val;
+  document.querySelectorAll('#fit-intensity-row .fit-int-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function fitLogWorkout() {
+  const type     = document.getElementById('fit-wk-type').value;
+  const duration = parseInt(document.getElementById('fit-wk-duration').value) || 45;
+  const notes    = document.getElementById('fit-wk-notes').value || '';
+  const typeIcons = { strength:'🏋️', cardio:'🏃', hiit:'⚡', yoga:'🧘', cycling:'🚴', swimming:'🏊', sports:'⚽' };
+  const kcalMap   = { strength:6, cardio:8, hiit:10, yoga:3, cycling:7, swimming:9, sports:7 };
+  const intMult   = { low:0.8, moderate:1.0, high:1.25 };
+  const kcal = Math.round(duration * (kcalMap[type] || 7) * (intMult[fitWorkoutIntensity] || 1));
+  const today = new Date().toLocaleDateString('en-US',{weekday:'short'});
+  fitnessData.workouts.unshift({ date:today, type, icon:typeIcons[type]||'🏋️', duration, intensity:fitWorkoutIntensity, kcal, notes });
+  fitnessData.today.caloriesBurned += kcal;
+  fitnessData.today.activeMin      += duration;
+  fitRenderWorkoutHistory();
+  fitRenderDashboard();
+  fitRenderStats();
+  showToast(`✅ ${typeIcons[type]} Workout logged — ${kcal} kcal burned!`);
+  speak(`Workout logged! You burned ${kcal} calories. Great job!`);
+  if (kaiSettings.strictness) fitShowSmartBanner();
+}
+
+function fitRenderWorkoutHistory() {
+  const el = document.getElementById('fit-wk-history');
+  if (!el) return;
+  if (!fitnessData.workouts.length) { el.innerHTML = '<p style="color:rgba(255,255,255,.3);font-size:11px;text-align:center;padding:12px">No workouts yet. Log your first one!</p>'; return; }
+  el.innerHTML = fitnessData.workouts.slice(0, 6).map(w => `
+    <div class="fit-wk-item">
+      <div class="fit-wk-icon">${w.icon}</div>
+      <div class="fit-wk-info">
+        <div class="fit-wk-name">${w.type.charAt(0).toUpperCase()+w.type.slice(1)} — ${w.intensity} intensity</div>
+        <div class="fit-wk-sub">${w.date} · ${w.duration} min${w.notes ? ' · ' + w.notes : ''}</div>
+      </div>
+      <div class="fit-wk-kcal">${w.kcal} kcal</div>
+    </div>
+  `).join('');
+}
+
+function fitCalc1RM() {
+  const w = parseFloat(document.getElementById('fit-1rm-weight').value);
+  const r = parseInt(document.getElementById('fit-1rm-reps').value);
+  if (!w || !r) return;
+  // Epley formula
+  const epley   = w * (1 + r / 30);
+  const brzycki = w * (36 / (37 - r));
+  const mayhew  = (100 * w) / (52.2 + 41.9 * Math.exp(-0.055 * r));
+  const avg = (epley + brzycki + mayhew) / 3;
+  const el = document.getElementById('fit-1rm-result');
+  if (el) {
+    el.className = 'fit-calc-result show';
+    el.innerHTML = `
+      <div style="color:#f9ca24;margin-bottom:4px">Estimated 1RM</div>
+      Epley:   ${epley.toFixed(1)} kg<br>
+      Brzycki: ${brzycki.toFixed(1)} kg<br>
+      Mayhew:  ${mayhew.toFixed(1)} kg<br>
+      <strong style="color:#2ecc71">Average: ${avg.toFixed(1)} kg</strong><br>
+      <span style="color:rgba(255,255,255,.4);font-size:10px">90% = ${(avg*.9).toFixed(1)}kg · 85% = ${(avg*.85).toFixed(1)}kg · 80% = ${(avg*.8).toFixed(1)}kg</span>
+    `;
+  }
+}
+
+// ── Body ───────────────────────────
+function fitSetGender(g, btn) {
+  fitGender = g;
+  fitnessData.profile.gender = g;
+  document.querySelectorAll('.fit-gender-row .fit-int-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const hipRow = document.getElementById('fit-bf-hip-row');
+  if (hipRow) hipRow.style.display = g === 'female' ? 'flex' : 'none';
+  fitUpdateBodyStats();
+}
+
+function fitUpdateBodyStats() {
+  const age  = parseInt(document.getElementById('fit-p-age')?.value)    || fitnessData.profile.age;
+  const h    = parseInt(document.getElementById('fit-p-height')?.value) || fitnessData.profile.heightCm;
+  const w    = parseFloat(document.getElementById('fit-p-weight')?.value) || fitnessData.profile.weightKg;
+  const act  = document.getElementById('fit-p-activity')?.value         || fitnessData.profile.activity;
+  const g    = fitGender;
+  fitnessData.profile = { ...fitnessData.profile, age, heightCm:h, weightKg:w, activity:act, gender:g };
+
+  const bmi  = w / Math.pow(h / 100, 2);
+  const bmr  = g === 'male' ? 10*w + 6.25*h - 5*age + 5 : 10*w + 6.25*h - 5*age - 161;
+  const actMult = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, extreme:1.9 };
+  const tdee = Math.round(bmr * (actMult[act] || 1.55));
+  const bmiClass = bmi < 18.5 ? ['Underweight','badge-yellow'] : bmi < 25 ? ['Normal','badge-green'] : bmi < 30 ? ['Overweight','badge-yellow'] : ['Obese','badge-red'];
+  const lbm  = w * (1 - 0.15); // rough LBM estimate
+  const ffmi = lbm / Math.pow(h / 100, 2);
+  const protTarget = Math.round(w * 2.2);
+
+  const grid = document.getElementById('fit-metrics-grid');
+  if (grid) {
+    grid.innerHTML = [
+      { icon:'⚖️', val:bmi.toFixed(1), unit:'', label:'BMI', badge:bmiClass },
+      { icon:'🔥', val:Math.round(bmr),  unit:' kcal', label:'BMR / day', badge:['Basal','badge-blue'] },
+      { icon:'⚡', val:tdee,             unit:' kcal', label:'TDEE / day', badge:['Maintenance','badge-blue'] },
+      { icon:'💪', val:protTarget,        unit:' g',   label:'Protein Target', badge:['Recommended','badge-green'] },
+      { icon:'📏', val:ffmi.toFixed(1),  unit:'',      label:'FFMI', badge: ffmi >= 25 ? ['Elite','badge-green'] : ['Natural','badge-blue'] },
+      { icon:'🧬', val:(w*1000/h).toFixed(1), unit:'', label:'Ponderal Index', badge:['Ratio','badge-blue'] },
+    ].map(m => `
+      <div class="fit-metric-card">
+        <div class="fit-metric-icon">${m.icon}</div>
+        <div class="fit-metric-val">${m.val}<span>${m.unit}</span></div>
+        <div class="fit-metric-label">${m.label}</div>
+        <div class="fit-metric-badge ${m.badge[1]}">${m.badge[0]}</div>
+      </div>
+    `).join('');
+  }
+
+  // Weight chart
+  fitRenderWeightChart();
+  // Energy panel
+  fitRenderEnergyPanel(Math.round(bmr), tdee);
+  if (kaiSettings.strictness) fitShowSmartBanner();
+}
+
+function fitCalcBodyFat() {
+  const waist = parseFloat(document.getElementById('fit-bf-waist').value);
+  const neck  = parseFloat(document.getElementById('fit-bf-neck').value);
+  const h     = fitnessData.profile.heightCm;
+  const g     = fitGender;
+  let bf;
+  if (g === 'male') {
+    bf = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(h)) - 450;
+  } else {
+    const hip = parseFloat(document.getElementById('fit-bf-hip').value) || 95;
+    bf = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(h)) - 450;
+  }
+  bf = Math.max(2, Math.min(60, bf));
+  const w = fitnessData.profile.weightKg;
+  const lbm = w * (1 - bf/100);
+  const fatMass = w * bf / 100;
+  const category = bf < (g==='male'?6:14) ? '🔵 Essential Fat' : bf < (g==='male'?14:21) ? '🟢 Athletic' : bf < (g==='male'?18:25) ? '🟢 Fitness' : bf < (g==='male'?25:32) ? '🟡 Average' : '🔴 Obese';
+  const el = document.getElementById('fit-bf-result');
+  if (el) {
+    el.className = 'fit-calc-result show';
+    el.innerHTML = `Body Fat: <strong style="color:#f9ca24">${bf.toFixed(1)}%</strong> — ${category}<br>Fat Mass: ${fatMass.toFixed(1)} kg<br>Lean Mass: ${lbm.toFixed(1)} kg`;
+  }
+}
+
+function fitRenderWeightChart() {
+  const el = document.getElementById('fit-weight-chart');
+  if (!el || !fitnessData.weightLog.length) return;
+  const logs = fitnessData.weightLog.slice(-7);
+  const vals = logs.map(l => l.kg);
+  const minV = Math.min(...vals) - 1;
+  const maxV = Math.max(...vals) + 1;
+  const maxH = 55;
+  el.innerHTML = `
+    <div class="fit-wt-bar-row">${vals.map(v => {
+      const h = Math.round((v - minV) / (maxV - minV) * maxH) + 5;
+      return `<div class="fit-wt-bar" style="height:${h}px" title="${v}kg"></div>`;
+    }).join('')}</div>
+    <div class="fit-wt-labels">${logs.map(l => `<div class="fit-wt-label">${l.date}<br><span style="color:rgba(255,255,255,.55)">${l.kg}</span></div>`).join('')}</div>
+  `;
+}
+
+// ── Nutrition ──────────────────────
+function fitLogNutrition() {
+  const cal  = parseFloat(document.getElementById('fit-n-cal').value)     || 0;
+  const prot = parseFloat(document.getElementById('fit-n-protein').value) || 0;
+  const carb = parseFloat(document.getElementById('fit-n-carbs').value)   || 0;
+  const fat  = parseFloat(document.getElementById('fit-n-fat').value)     || 0;
+  const fib  = parseFloat(document.getElementById('fit-n-fiber').value)   || 0;
+  fitnessData.nutrition.calories += cal;
+  fitnessData.nutrition.protein  += prot;
+  fitnessData.nutrition.carbs    += carb;
+  fitnessData.nutrition.fat      += fat;
+  fitnessData.nutrition.fiber    += fib;
+  fitRenderNutrition();
+  fitRenderDashboard();
+  showToast(`🥗 Meal logged — ${cal} kcal added!`);
+  if (kaiSettings.strictness) fitShowSmartBanner();
+}
+
+function fitRenderNutrition() {
+  const n  = fitnessData.nutrition;
+  const t  = n.target;
+  const el = document.getElementById('fit-cal-balance');
+  if (el) {
+    const p = Math.min(n.calories / t.calories * 100, 100);
+    const surplus = n.calories - t.calories;
+    const color = Math.abs(surplus) < 100 ? '#2ecc71' : surplus > 0 ? '#e17055' : '#00cec9';
+    el.innerHTML = `
+      <div class="fit-cal-bal-row">
+        <span class="fit-cal-bal-title">Calories Today</span>
+        <span class="fit-cal-bal-val" style="color:${color}">${n.calories} <span style="font-size:11px;color:rgba(255,255,255,.35)">/ ${t.calories} kcal</span></span>
+      </div>
+      <div class="fit-cal-bal-bar"><div class="fit-cal-bal-fill" style="width:${p}%;background:${color}"></div></div>
+      <div style="font-size:10px;color:rgba(255,255,255,.35);font-family:'Share Tech Mono',monospace;margin-top:5px">
+        ${Math.abs(surplus) < 100 ? '⚖️ At maintenance' : surplus > 0 ? `🔺 Surplus +${surplus} kcal` : `🔻 Deficit ${Math.abs(surplus)} kcal`}
+      </div>
+    `;
+  }
+  const mb = document.getElementById('fit-macro-bars');
+  if (mb) {
+    const macros = [
+      { name:'Protein', cur:n.protein, tgt:t.protein, unit:'g', color:'#e17055' },
+      { name:'Carbohydrates', cur:n.carbs, tgt:t.carbs, unit:'g', color:'#f9ca24' },
+      { name:'Fat', cur:n.fat, tgt:t.fat, unit:'g', color:'#74b9ff' },
+      { name:'Fiber', cur:n.fiber, tgt:t.fiber, unit:'g', color:'#2ecc71' },
+    ];
+    mb.innerHTML = macros.map(m => {
+      const p = Math.min(m.cur / m.tgt * 100, 100);
+      return `<div class="fit-macro-bar-row">
+        <div class="fit-macro-top"><span class="fit-macro-name">${m.name}</span><span class="fit-macro-nums">${m.cur}${m.unit} / ${m.tgt}${m.unit}</span></div>
+        <div class="fit-macro-track"><div class="fit-macro-fill" style="width:${p}%;background:${m.color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+  // Water tracker
+  const wt = document.getElementById('fit-water-tracker');
+  if (wt) {
+    const glasses = fitnessData.today.waterGlasses;
+    wt.innerHTML = `
+      <div class="fit-water-glasses">${Array.from({length:8},(_,i)=>`<div class="fit-water-glass ${i<glasses?'filled':''}" onclick="fitToggleWaterGlass(${i})">💧</div>`).join('')}</div>
+      <div class="fit-water-info">${glasses}/8 glasses (${(glasses*250)}ml) today</div>
+    `;
+  }
+  // Energy panel
+  const p = fitnessData.profile;
+  const bmr = p.gender === 'male' ? 10*p.weightKg + 6.25*p.heightCm - 5*p.age + 5 : 10*p.weightKg + 6.25*p.heightCm - 5*p.age - 161;
+  const actMult = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, extreme:1.9 };
+  fitRenderEnergyPanel(Math.round(bmr), Math.round(bmr * (actMult[p.activity] || 1.55)));
+}
+
+function fitRenderEnergyPanel(bmr, tdee) {
+  const p = fitnessData.profile;
+  const goal = document.getElementById('fit-p-goal')?.value || p.goal;
+  const targets = { cut: tdee - 400, muscle: tdee + 250, maintain: tdee, endurance: tdee + 100 };
+  const goalTarget = targets[goal] || tdee;
+  const ep = document.getElementById('fit-energy-panel');
+  if (ep) ep.innerHTML = [
+    { label:'BMR', val:bmr,        sub:'Basal — at rest' },
+    { label:'TDEE', val:tdee,       sub:'Total daily burn' },
+    { label:'TARGET', val:goalTarget, sub:'For your goal' },
+    { label:'SURPLUS', val:fitnessData.nutrition.calories - tdee > 0 ? '+' + (fitnessData.nutrition.calories - tdee) : (fitnessData.nutrition.calories - tdee), sub:'Today\'s balance' },
+  ].map(e => `<div class="fit-energy-card">
+    <div class="fit-energy-label">${e.label}</div>
+    <div class="fit-energy-val">${e.val}</div>
+    <div class="fit-energy-sub">${e.sub}</div>
+  </div>`).join('');
+}
+
+function fitToggleWaterGlass(i) {
+  fitnessData.today.waterGlasses = i + 1;
+  fitRenderNutrition();
+  fitRenderDashboard();
+  if (kaiSettings.strictness) fitShowSmartBanner();
+}
+
+// ── Stats ──────────────────────────
+function fitRenderStats() {
+  const wks = fitnessData.workouts;
+  const totalWk = wks.length;
+  const totalKcal = wks.reduce((s,w) => s + w.kcal, 0);
+  const totalMin  = wks.reduce((s,w) => s + w.duration, 0);
+  const streak    = Math.min(totalWk, 7);
+  const p = fitnessData.profile;
+
+  const pg = document.getElementById('fit-perf-grid');
+  if (pg) pg.innerHTML = [
+    { icon:'🏋️', val:totalWk,              label:'Workouts Logged' },
+    { icon:'🔥', val:totalKcal + ' kcal',  label:'Total Burned' },
+    { icon:'⏱️', val:totalMin + ' min',    label:'Total Active Time' },
+    { icon:'🔥', val:streak + ' days',     label:'Current Streak' },
+  ].map(c => `<div class="fit-perf-card"><div class="fit-perf-icon">${c.icon}</div><div class="fit-perf-val">${c.val}</div><div class="fit-perf-label">${c.label}</div></div>`).join('');
+
+  // Volume chart (7 days)
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const volByDay = days.map(d => {
+    const ws = wks.filter(w => w.date === d);
+    return ws.reduce((s,w) => s + w.duration, 0);
+  });
+  const maxVol = Math.max(...volByDay, 1);
+  const vc = document.getElementById('fit-vol-chart');
+  if (vc) vc.innerHTML = `
+    <div class="fit-vol-bars">${volByDay.map(v => `<div class="fit-vol-bar" style="height:${Math.round(v/maxVol*65)+4}px" title="${v}min"></div>`).join('')}</div>
+    <div class="fit-vol-day-row">${days.map(d => `<div class="fit-vol-day">${d}</div>`).join('')}</div>
+  `;
+
+  // VO2 max (Uth–Sørensen formula, simplified)
+  const v = fitnessData.vitals;
+  const maxHR = 220 - p.age;
+  const vo2 = 15 * (maxHR / v.restingHR);
+  const vo2Class = vo2 < 35 ? '🔴 Poor' : vo2 < 42 ? '🟡 Fair' : vo2 < 50 ? '🟢 Good' : vo2 < 57 ? '🔵 Excellent' : '🏆 Superior';
+  const vc2 = document.getElementById('fit-vo2-card');
+  if (vc2) vc2.innerHTML = `<div class="fit-vo2-val">${vo2.toFixed(1)}</div><div class="fit-vo2-unit">mL/kg/min</div><div class="fit-vo2-class">${vo2Class} for your age group</div>`;
+
+  // PRs
+  const pr = document.getElementById('fit-pr-list');
+  if (pr) pr.innerHTML = fitnessData.prs.map(p => `<div class="fit-pr-item"><span class="fit-pr-name">${p.name}</span><span class="fit-pr-val">${p.val}</span></div>`).join('');
+
+  // Recovery score
+  const sleep = v.sleepHrs;
+  const hrv   = v.hrv;
+  const wkFreq = totalWk;
+  let score = 50;
+  score += (sleep >= 7 && sleep <= 9) ? 20 : sleep < 6 ? -15 : 5;
+  score += hrv > 50 ? 20 : hrv > 40 ? 10 : 0;
+  score += wkFreq <= 4 ? 10 : -5;
+  score = Math.min(100, Math.max(0, score));
+  const rColor = score >= 80 ? '#2ecc71' : score >= 60 ? '#f9ca24' : '#e17055';
+  const rc = document.getElementById('fit-recovery-card');
+  if (rc) rc.innerHTML = `
+    <div class="fit-recovery-score" style="color:${rColor}">${score}</div>
+    <div class="fit-recovery-bar"><div class="fit-recovery-fill" style="width:${score}%;background:${rColor}"></div></div>
+    <div class="fit-recovery-label">${score>=80?'🟢 Ready to train hard!':score>=60?'🟡 Light to moderate session ok':'🔴 Rest day recommended — prioritize sleep & nutrition'}</div>
+  `;
+}
+
+// ── Modals ─────────────────────────
+function fitOpenModal(id) {
+  document.getElementById('fit-modal-overlay')?.classList.add('open');
+  document.getElementById(id)?.classList.add('open');
+}
+function fitCloseModal() {
+  document.getElementById('fit-modal-overlay')?.classList.remove('open');
+  document.querySelectorAll('.fit-modal').forEach(m => m.classList.remove('open'));
+}
+
+function fitSaveWeight() {
+  const val  = parseFloat(document.getElementById('modal-weight-val').value);
+  const date = document.getElementById('modal-weight-date').value;
+  if (!val) return;
+  const label = date ? new Date(date).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit'}) : 'Today';
+  fitnessData.weightLog.push({ date: label, kg: val });
+  fitnessData.profile.weightKg = val;
+  document.getElementById('fit-p-weight').value = val;
+  fitUpdateBodyStats();
+  fitCloseModal();
+  showToast(`⚖️ Weight ${val} kg logged!`);
+  speak(`Weight logged. ${val} kilograms.`);
+}
+
+function fitSelectWater(n, btn) {
+  fitWaterModal = n;
+  document.querySelectorAll('.fit-water-num-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function fitSaveWater() {
+  fitnessData.today.waterGlasses = fitWaterModal;
+  fitRenderNutrition();
+  fitRenderDashboard();
+  fitCloseModal();
+  showToast(`💧 ${fitWaterModal} glasses of water logged!`);
+  if (kaiSettings.strictness) fitShowSmartBanner();
+}
+
+function fitSetSleepQ(q, btn) {
+  fitSleepQuality = q;
+  document.querySelectorAll('#modal-sleep .fit-int-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function fitSaveSleep() {
+  const hrs = parseFloat(document.getElementById('modal-sleep-hrs').value) || 7;
+  fitnessData.vitals.sleepHrs     = hrs;
+  fitnessData.vitals.sleepQuality = fitSleepQuality;
+  fitRenderDashboard();
+  fitRenderStats();
+  fitCloseModal();
+  showToast(`😴 ${hrs}h sleep logged (${fitSleepQuality})!`);
+  if (kaiSettings.strictness) fitShowSmartBanner();
+}
+
+// ── KAI Guide Flows ────────────────
+const fitDashboardFlow = [
+  { targetId:'home-fitness-icon', viewId:'home-screen',
+    message:"Let's open your Fitness app! Tap the 💪 icon.", tapToAdvance:true,
+    onTap() { openApp('fitness'); } },
+  { targetId:'fit-rings-row', viewId:'fitness-screen',
+    message:"These are your activity rings — calories burned, steps, and active minutes. They fill as you hit your daily targets.", tapToAdvance:false, okLabel:'Got it →' },
+  { targetId:'fit-vitals-row', viewId:'fitness-screen',
+    message:"Your vitals: Resting Heart Rate, HRV (heart rate variability — measures recovery), sleep hours, and water intake.", tapToAdvance:false, okLabel:'Next →' },
+  { targetId:'fit-hz-list', viewId:'fitness-screen',
+    message:"Heart Rate Zones show which zone you train in, calculated from your age. Zone 2 is best for fat loss and endurance.", tapToAdvance:false, okLabel:'Done ✓' },
+];
+
+const fitWorkoutFlow = [
+  { targetId:'home-fitness-icon', viewId:'home-screen',
+    message:"Open your Fitness app first.", tapToAdvance:true,
+    onTap() { openApp('fitness'); } },
+  { targetId:'fit-nav-workout', viewId:'fitness-screen',
+    message:"Tap the Workout tab at the bottom to log your session.", tapToAdvance:true,
+    onTap() { fitSetTab('workout'); } },
+  { targetId:'fit-wk-type', viewId:'fitness-screen',
+    message:"Pick your workout type from the dropdown — Strength, Cardio, HIIT, and more.", tapToAdvance:false, okLabel:'Selected →' },
+  { targetId:'fit-intensity-row', viewId:'fitness-screen',
+    message:"Set the intensity. Higher intensity = more calories burned! For heavy lifting, pick High.", tapToAdvance:false, okLabel:'Set intensity →' },
+  { targetId:'fit-save-btn', viewId:'fitness-screen',
+    message:"Tap 'Log Workout' to save your session. KAI will calculate calories burned automatically.", tapToAdvance:false, okLabel:'Done ✓' },
+];
+
+const fitBodyStatsFlow = [
+  { targetId:'home-fitness-icon', viewId:'home-screen',
+    message:"Let's check your body stats! Open the Fitness app.", tapToAdvance:true,
+    onTap() { openApp('fitness'); } },
+  { targetId:'fit-nav-body', viewId:'fitness-screen',
+    message:"Tap the Body tab to see your profile and computed metrics.", tapToAdvance:true,
+    onTap() { fitSetTab('body'); } },
+  { targetId:'fit-metrics-grid', viewId:'fitness-screen',
+    message:"Your computed metrics: BMI, BMR (calories at rest), TDEE (total daily burn), protein target, and FFMI (muscle density index).", tapToAdvance:false, okLabel:'Got it →' },
+  { targetId:'fit-nav-body', viewId:'fitness-screen',
+    message:"Scroll down to use the Body Fat calculator (Navy method) — it uses waist, neck, and hip measurements for an accurate estimate.", tapToAdvance:false, okLabel:'Done ✓' },
+];
+
+const fitNutritionFlow = [
+  { targetId:'home-fitness-icon', viewId:'home-screen',
+    message:"Let's check your nutrition! Open the Fitness app.", tapToAdvance:true,
+    onTap() { openApp('fitness'); } },
+  { targetId:'fit-nav-nutrition', viewId:'fitness-screen',
+    message:"Tap the Nutrition tab.", tapToAdvance:true,
+    onTap() { fitSetTab('nutrition'); } },
+  { targetId:'fit-cal-balance', viewId:'fitness-screen',
+    message:"The calorie balance bar shows how much you've eaten vs your TDEE target. Green = at maintenance, blue = deficit, red = surplus.", tapToAdvance:false, okLabel:'Got it →' },
+  { targetId:'fit-macro-bars', viewId:'fitness-screen',
+    message:"Macro bars track Protein, Carbs, Fat, and Fiber vs your targets. Protein is the most important for muscle — aim to hit it every day!", tapToAdvance:false, okLabel:'Done ✓' },
+];
 
 /* ═══════════════════════════════════
    CONTACTS
@@ -1848,6 +2585,381 @@ function dialToggleSpeaker() {
 }
 function dialOpenKeypad() {
   showToast('📱 Keypad would open here');
+}
+
+/* ═══════════════════════════════════
+   MAPS
+═══════════════════════════════════ */
+let mapsCurrentDest = '';
+let mapsCurrentMode = 'd'; // d=driving, r=transit, w=walking
+
+function mapsOnInput(val) {
+  const clearBtn = document.getElementById('maps-search-clear');
+  if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
+}
+
+function mapsSetMode(mode) {
+  mapsCurrentMode = mode;
+  const modeMap = { d: 'driving', r: 'transit', w: 'walking' };
+  Object.keys(modeMap).forEach(m => {
+    document.getElementById('maps-tab-' + modeMap[m])?.classList.toggle('active', m === mode);
+  });
+  if (mapsCurrentDest) mapsGetDirections(); // will re-fetch GPS automatically
+}
+
+function mapsSearch() {
+  const input = document.getElementById('maps-search-input');
+  const q = (input?.value || '').trim();
+  if (!q) return;
+  mapsCurrentDest = mapsDisambiguate(q);
+  const clearBtn = document.getElementById('maps-search-clear');
+  if (clearBtn) clearBtn.style.display = 'block';
+  const loading = document.getElementById('maps-loading');
+  if (loading) loading.style.display = 'flex';
+  const iframe = document.getElementById('maps-iframe');
+  if (iframe) {
+    iframe.onload = () => { if (loading) loading.style.display = 'none'; };
+    iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(mapsCurrentDest)}&output=embed&hl=en`;
+  }
+}
+
+// Makes vague PH place names unambiguous for Google Maps
+function mapsDisambiguate(q) {
+  const lower = q.toLowerCase();
+  const alreadyLocated = ['manila','quezon','makati','pasig','taguig','caloocan',
+    'marikina','paranaque','pasay','malabon','navotas','valenzuela','las piñas',
+    'muntinlupa','pateros','philippines','ph'].some(k => lower.includes(k));
+  return alreadyLocated ? q : q + ', Manila, Philippines';
+}
+
+function mapsLoadRoute(origin, destination, mode) {
+  const loading = document.getElementById('maps-loading');
+  if (loading) loading.style.display = 'flex';
+  const iframe = document.getElementById('maps-iframe');
+  if (!iframe) return;
+  const src = `https://maps.google.com/maps?saddr=${encodeURIComponent(origin)}&daddr=${encodeURIComponent(destination)}&dirflg=${mode}&output=embed&hl=en`;
+  iframe.onload = () => { if (loading) loading.style.display = 'none'; };
+  iframe.src = src;
+}
+
+function mapsGetDirections() {
+  const q = mapsDisambiguate(mapsCurrentDest || (document.getElementById('maps-search-input')?.value || '').trim());
+  if (!q || q === mapsDisambiguate('')) { showToast('📍 Enter a destination first'); return; }
+  mapsCurrentDest = q;
+
+  const loading = document.getElementById('maps-loading');
+  if (loading) { loading.style.display = 'flex'; }
+
+  // Try to get real GPS location first
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const origin = `${pos.coords.latitude},${pos.coords.longitude}`;
+        mapsLoadRoute(origin, q, mapsCurrentMode);
+      },
+      () => {
+        // Geolocation denied or failed — use Manila city center as fallback
+        mapsLoadRoute('Manila, Philippines', q, mapsCurrentMode);
+      },
+      { timeout: 6000, maximumAge: 60000 }
+    );
+  } else {
+    mapsLoadRoute('Manila, Philippines', q, mapsCurrentMode);
+  }
+
+  if (kaiSettings.strictness) {
+    setTimeout(() => mapsShowSmartPanel(q), 1200);
+  }
+}
+
+function mapsNavigateTo(destination) {
+  const dest = mapsDisambiguate(destination);
+  openApp('maps');
+  setTimeout(() => {
+    const input = document.getElementById('maps-search-input');
+    if (input) { input.value = dest; mapsOnInput(dest); }
+    mapsCurrentDest = dest;
+    mapsGetDirections();
+  }, 450);
+}
+
+function mapsClear() {
+  const input = document.getElementById('maps-search-input');
+  if (input) { input.value = ''; mapsOnInput(''); }
+  mapsCurrentDest = '';
+  mapsCloseSmartPanel();
+  const loading = document.getElementById('maps-loading');
+  if (loading) loading.style.display = 'flex';
+  const iframe = document.getElementById('maps-iframe');
+  if (iframe) {
+    iframe.onload = () => { if (loading) loading.style.display = 'none'; };
+    iframe.src = 'https://maps.google.com/maps?q=Manila+Philippines&output=embed&hl=en';
+  }
+}
+
+function mapsCloseSmartPanel() {
+  document.getElementById('maps-smart-panel')?.classList.remove('open');
+}
+
+function mapsShowSmartPanel(destination) {
+  const panel  = document.getElementById('maps-smart-panel');
+  const destEl = document.getElementById('maps-smart-dest');
+  const optsEl = document.getElementById('maps-smart-options');
+  const tipEl  = document.getElementById('maps-smart-tip');
+  if (!panel) return;
+
+  if (destEl) destEl.textContent = 'Going to: ' + destination;
+
+  const options = getMapsTransportOptions(destination);
+  if (optsEl) {
+    optsEl.innerHTML = options.map(opt => `
+      <div class="maps-smart-option ${opt.recommended ? 'recommended' : ''}">
+        <div class="maps-smart-opt-icon">${opt.icon}</div>
+        <div class="maps-smart-opt-info">
+          <div class="maps-smart-opt-name">
+            ${opt.name}
+            ${opt.recommended ? '<span class="maps-best-badge">BEST</span>' : ''}
+          </div>
+          <div class="maps-smart-opt-detail">${opt.detail}</div>
+          ${opt.signage ? `<div class="maps-signage-wrap">
+            <span class="maps-signage-label">🪧 Look for:</span>
+            <div class="maps-signage-board">${opt.signage.map(s => `<span class="maps-signage-tag">${s}</span>`).join('')}</div>
+          </div>` : ''}
+        </div>
+        <div class="maps-smart-opt-cost">
+          <div class="maps-smart-opt-fare">${opt.fare}</div>
+          <div class="maps-smart-opt-time">${opt.time}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Traffic tip based on time of day
+  const hr = new Date().getHours();
+  const isRush = (hr >= 7 && hr <= 9) || (hr >= 17 && hr <= 20);
+  const trafficMsg = isRush
+    ? '⚠️ <strong>Rush hour detected!</strong> Expect heavy traffic on roads. Rail or walk is best right now.'
+    : '✅ <strong>Light traffic now.</strong> Good time to travel! Avoid roads between 7–9AM and 5–8PM.';
+  if (tipEl) tipEl.innerHTML = `<i class="fas fa-clock"></i> ${trafficMsg}`;
+
+  panel.classList.add('open');
+}
+
+function getMapsTransportOptions(destination) {
+  const d = destination.toLowerCase();
+
+  // ── Rail detection ──────────────────────────────────────────────────────────
+  const nearLRT2 = ['recto','morayta','españa','espana','sampaloc','legarda','pureza','v. mapa','j. ruiz','gilmore','betty go','cubao','anonas','katipunan','santolan'].some(s => d.includes(s));
+  const nearLRT1 = ['baclaran','vito cruz','buendia','gil puyat','pedro gil','quirino','central','carriedo','doroteo jose','bambang','tayuman','blumentritt','abad santos','monumento','edsa-taft'].some(s => d.includes(s));
+  const nearMRT  = ['north ave','quezon ave','gma','kamuning','araneta','shaw','boni','guadalupe','buendia','ayala','magallanes','taft','ortigas','cubao'].some(s => d.includes(s));
+  const hasRail  = nearLRT1 || nearLRT2 || nearMRT;
+  const railName = nearLRT2 ? 'LRT-2' : nearMRT ? 'MRT-3' : nearLRT1 ? 'LRT-1' : null;
+
+  // ── Signage database — keyed by destination keywords ───────────────────────
+  // Each entry: { jeep, bus, rail (optional override) }
+  const signageDB = [
+    // ── Manila / Quiapo / Intramuros ─────────────────
+    { keys:['quiapo','quintin paredes','carriedo','sta. cruz','santa cruz'],
+      jeep:['QUIAPO','DIVISORIA – QUIAPO','MONUMENTO – QUIAPO','CUBAO – QUIAPO'],
+      bus: ['QUIAPO','DIVISORIA – QUIAPO'],
+      rail: ['LRT-1 → Carriedo Station'] },
+
+    { keys:['intramuros','rajah sulayman','manila city hall','ermita'],
+      jeep:['INTRAMUROS','QUIAPO – INTRAMUROS','DIVISORIA – MANILA'],
+      bus: ['MANILA – INTRAMUROS','BACLARAN – DIVISORIA'] },
+
+    { keys:['divisoria','tondo','binondo','chinatown'],
+      jeep:['DIVISORIA','QUIAPO – DIVISORIA','MONUMENTO – DIVISORIA'],
+      bus: ['DIVISORIA – BACLARAN','MONUMENTO – DIVISORIA'] },
+
+    // ── Morayta / España / Sampaloc ──────────────────
+    { keys:['morayta','feu','far eastern university','lacson','españa','espana','sampaloc','ust','university of santo tomas'],
+      jeep:['MORAYTA – QUIAPO','ESPAÑA – QUIAPO','SAMPALOC – DIVISORIA','ESPAÑA – DIVISORIA','UST – MORAYTA'],
+      bus: ['ESPAÑA – QUIAPO','SAMPALOC – DIVISORIA'],
+      rail: ['LRT-2 → Recto or Legarda Station'] },
+
+    { keys:['legarda','recto','bambang'],
+      jeep:['RECTO','LEGARDA – QUIAPO','SAMPALOC – DIVISORIA'],
+      bus: ['RECTO – DIVISORIA'],
+      rail: ['LRT-2 → Recto Station','LRT-1 → Bambang Station'] },
+
+    // ── Cubao / Quezon City ──────────────────────────
+    { keys:['cubao','araneta','gateway','farmers','ali mall'],
+      jeep:['CUBAO','CUBAO – QUIAPO','CUBAO – DIVISORIA','CUBAO – MONUMENTO'],
+      bus: ['CUBAO – BACLARAN','CUBAO – MONUMENTO'],
+      rail: ['LRT-2 → Cubao Station','MRT-3 → Araneta-Cubao Station'] },
+
+    { keys:['quezon ave','quezon avenue','sto. domingo'],
+      jeep:['QUEZON AVE – QUIAPO','QUEZON AVE – CUBAO'],
+      bus: ['QUEZON AVE – CUBAO'],
+      rail: ['MRT-3 → Quezon Ave Station'] },
+
+    { keys:['katipunan','ateneo','miriam','up diliman','university of the philippines','diliman'],
+      jeep:['KATIPUNAN','KATIPUNAN – CUBAO','KATIPUNAN – FAIRVIEW'],
+      bus: ['KATIPUNAN – CUBAO'],
+      rail: ['LRT-2 → Katipunan Station'] },
+
+    { keys:['fairview','commonwealth','batasan','novaliches'],
+      jeep:['FAIRVIEW','COMMONWEALTH – CUBAO','BATASAN – CUBAO','FAIRVIEW – MONUMENTO'],
+      bus: ['FAIRVIEW – CUBAO','COMMONWEALTH – CUBAO'] },
+
+    { keys:['monumento','caloocan','malabon','grace park'],
+      jeep:['MONUMENTO','CALOOCAN – DIVISORIA','MALABON – DIVISORIA'],
+      bus: ['MONUMENTO – BACLARAN','MONUMENTO – DIVISORIA'],
+      rail: ['LRT-1 → Monumento Station'] },
+
+    // ── Makati / BGC / Ortigas ───────────────────────
+    { keys:['makati','ayala','glorietta','greenbelt','salcedo','legazpi'],
+      jeep:['AYALA – QUIAPO','AYALA – DIVISORIA','MAKATI – QUIAPO'],
+      bus: ['AYALA – BACLARAN','AYALA – CUBAO','EDSA – AYALA'],
+      rail: ['MRT-3 → Ayala Station'] },
+
+    { keys:['bgc','bonifacio global city','taguig','high street','uptown'],
+      jeep:['BGC – AYALA','TAGUIG – AYALA'],
+      bus: ['BGC – AYALA','BGC – CUBAO (P2P)','BGCTERMINAL BUS'] },
+
+    { keys:['ortigas','sm megamall','robinson galleria','shaw','mandaluyong'],
+      jeep:['ORTIGAS – CUBAO','SHAW – CUBAO','ORTIGAS – QUIAPO'],
+      bus: ['ORTIGAS – BACLARAN','ORTIGAS – CUBAO'],
+      rail: ['MRT-3 → Shaw or Ortigas Station'] },
+
+    // ── Pasay / Baclaran / Airport ───────────────────
+    { keys:['baclaran','pasay','paranaque','naia','airport','terminal 1','terminal 2','terminal 3'],
+      jeep:['BACLARAN – QUIAPO','BACLARAN – DIVISORIA'],
+      bus: ['BACLARAN – CUBAO','BACLARAN – MONUMENTO'],
+      rail: ['LRT-1 → Baclaran Station'] },
+
+    { keys:['mall of asia','moa','entertainment city','solaire'],
+      jeep:['MOA – BACLARAN','PASAY – BACLARAN'],
+      bus: ['MOA – CUBAO (P2P)','BACLARAN – CUBAO'] },
+
+    // ── Marikina / Pasig / Antipolo ──────────────────
+    { keys:['marikina','santolan','robinson marikina','riverbanks'],
+      jeep:['MARIKINA – CUBAO','SANTOLAN – CUBAO'],
+      bus: ['MARIKINA – CUBAO'],
+      rail: ['LRT-2 → Santolan Station'] },
+
+    { keys:['antipolo','sumulong','cainta','taytay'],
+      jeep:['ANTIPOLO – CUBAO','ANTIPOLO – ARANETA','CAINTA – CUBAO'],
+      bus: ['ANTIPOLO – CUBAO','ANTIPOLO – ORTIGAS'] },
+
+    { keys:['pasig','valle verde','kapitolyo','san antonio'],
+      jeep:['PASIG – CUBAO','PASIG – QUIAPO','KAPITOLYO – ORTIGAS'],
+      bus: ['PASIG – CUBAO','PASIG – ORTIGAS'] },
+
+    // ── Mandaluyong / San Juan ────────────────────────
+    { keys:['mandaluyong','boni','sm megamall','edsa shangrila'],
+      jeep:['MANDALUYONG – QUIAPO','BONI – CUBAO'],
+      bus: ['MANDALUYONG – CUBAO','EDSA – ORTIGAS'],
+      rail: ['MRT-3 → Boni Station'] },
+
+    // ── Las Piñas / Muntinlupa / Alabang ─────────────
+    { keys:['alabang','muntinlupa','filinvest','southmall','starmall'],
+      jeep:['ALABANG – BACLARAN','ALABANG – PASAY'],
+      bus: ['ALABANG – CUBAO (P2P)','ALABANG – AYALA'] },
+
+    // ── Novaliches / Valenzuela ──────────────────────
+    { keys:['novaliches','valenzuela','meycauayan','bocaue'],
+      jeep:['NOVALICHES – CUBAO','NOVALICHES – MONUMENTO','VALENZUELA – DIVISORIA'],
+      bus: ['NOVALICHES – CUBAO','VALENZUELA – DIVISORIA'] },
+  ];
+
+  // ── Match destination to signage entry ─────────────────────────────────────
+  let matched = signageDB.find(entry => entry.keys.some(k => d.includes(k)));
+
+  // Generic fallback signage using the raw destination name
+  const rawName = destination.replace(/, Manila, Philippines$/i,'').replace(/, Philippines$/i,'').trim().toUpperCase();
+  const fallbackJeep = [rawName, `${rawName} – QUIAPO`, `${rawName} – CUBAO`];
+  const fallbackBus  = [rawName, `${rawName} – BACLARAN`];
+
+  const jeepSigns = matched ? matched.jeep : fallbackJeep;
+  const busSigns  = matched ? matched.bus  : fallbackBus;
+  const railSign  = matched?.rail || null;
+
+  // ── Build options array ────────────────────────────────────────────────────
+  const opts = [
+    {
+      icon: '🚌',
+      name: 'Jeepney / E-Jeep',
+      detail: 'Cheapest PH transport. Flag one down on the roadside.',
+      signage: jeepSigns,
+      fare: '₱13–₱25',
+      time: '30–60 min',
+      recommended: !hasRail,
+    },
+    {
+      icon: '🚍',
+      name: 'P2P / Aircon Bus',
+      detail: 'Air-conditioned, fewer stops, faster than jeep.',
+      signage: busSigns,
+      fare: '₱25–₱65',
+      time: '25–45 min',
+      recommended: false,
+    },
+  ];
+
+  if (hasRail) {
+    opts.push({
+      icon: '🚇',
+      name: railName + ' (Rail)',
+      detail: 'Fixed route, avoids road traffic completely. Best pick!',
+      signage: railSign || [`${railName} → nearest station`],
+      fare: '₱15–₱35',
+      time: '15–30 min',
+      recommended: true,
+    });
+  }
+
+  opts.push(
+    {
+      icon: '🛵',
+      name: 'Angkas / Joyride',
+      detail: 'Motorcycle taxi — weaves through traffic fast. Book in-app.',
+      signage: null,
+      fare: '₱50–₱150',
+      time: '15–25 min',
+      recommended: false,
+    },
+    {
+      icon: '🚗',
+      name: 'Grab Car',
+      detail: 'Most comfortable. Book via the Grab app.',
+      signage: null,
+      fare: '₱120–₱350',
+      time: '20–45 min',
+      recommended: false,
+    }
+  );
+
+  return opts;
+}
+
+function mapsNavGuide(destination) {
+  return [
+    {
+      targetId: 'maps-search-input',
+      viewId: 'maps-screen',
+      message: `I've entered "${destination}" in the search box. Now tap the blue arrows button to load directions on the map!`,
+      tapToAdvance: false,
+      okLabel: 'Next →',
+    },
+    {
+      targetId: 'maps-dir-btn',
+      viewId: 'maps-screen',
+      message: 'Tap this Directions button! Google Maps will show you the best route right inside the app.',
+      tapToAdvance: true,
+      onTap() { mapsGetDirections(); },
+    },
+    {
+      targetId: 'maps-mode-tabs',
+      viewId: 'maps-screen',
+      message: kaiSettings.strictness
+        ? 'Switch transport mode here — Drive, Transit, or Walk. 🚇 Transit is cheapest and avoids traffic for most Manila routes!'
+        : 'Switch between driving 🚗, transit 🚌, and walking 🚶 modes here. Each gives a different route on the map.',
+      tapToAdvance: false,
+      okLabel: 'Got it ✓',
+    },
+  ];
 }
 
 /* ═══════════════════════════════════
